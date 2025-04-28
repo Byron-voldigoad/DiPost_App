@@ -1,81 +1,110 @@
 import 'package:flutter/material.dart';
-import '../models/app_state.dart';
+import '../models/user.dart';
 import '../services/auth_service.dart';
-import '../dao/user_dao.dart';
-import '../database/database_helper.dart';
+import '../services/database_helper.dart';
 
-class AuthProvider extends ChangeNotifier {
-  AppState _state = AppState();
-  AppState get state => _state;
+class AuthProvider with ChangeNotifier {
+  final AuthService _authService = AuthService();
+  User? _user;
+  bool _isLoading = false;
 
-  final AuthService _authService;
+  User? get user => _user;
+  bool get isLoading => _isLoading;
 
-  AuthProvider() : _authService = AuthService(UserDao(DatabaseHelper.instance));
+  // Permissions
+  bool get isAdmin => _user?.isAdmin ?? false;
+  bool get isOperateur => _user?.isOperateur ?? false;
+  bool get isLivreur => _user?.isLivreur ?? false;
+  bool get isClient => _user?.isClient ?? false;
 
-  Future<void> register(String email, String phone, String password) async {
-    _state = _state.copyWith(isLoading: true);
-    notifyListeners();
-
-    try {
-      final success = await _authService.register(email, phone, password);
-      if (success) {
-        _state = _state.copyWith(
-          isLoading: false,
-          isAuthenticated: true,
-          postalId: email, // Pour le moment, on utilise l'email comme identifiant
-        );
-      } else {
-        _state = _state.copyWith(
-          isLoading: false,
-          error: 'Échec de l\'enregistrement',
-        );
-      }
-    } catch (e) {
-      _state = _state.copyWith(
-        isLoading: false,
-        error: 'Erreur: ${e.toString()}',
-      );
-    }
-
-    notifyListeners();
-  }
-
-  Future<void> login(String email, String password) async {
-    _state = _state.copyWith(isLoading: true);
+  Future<bool> login(String email, String password) async {
+    _isLoading = true;
     notifyListeners();
 
     try {
       final user = await _authService.login(email, password);
       if (user != null) {
-        _state = _state.copyWith(
-          isLoading: false,
-          isAuthenticated: true,
-          postalId: user.email,
-          error: null,
-        );
-      } else {
-        _state = _state.copyWith(
-          isLoading: false,
-          error: 'Email ou mot de passe incorrect',
-        );
+        _user = user;
+        return true;
       }
+      return false;
     } catch (e) {
-      _state = _state.copyWith(
-        isLoading: false,
-        error: 'Erreur: ${e.toString()}',
-      );
+      debugPrint('Login error: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
+  }
 
+  Future<bool> register({
+    required String email,
+    required String password,
+    required String nom,
+    required String prenom,
+    required String telephone,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final success = await _authService.register(
+        email: email,
+        password: password,
+        nom: nom,
+        prenom: prenom,
+        telephone: telephone,
+      );
+      
+      if (success) {
+        return await login(email, password);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Registration error: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    _user = null;
     notifyListeners();
   }
 
-  void logout() {
-    _state = AppState();
-    notifyListeners();
-  }
+  Future<bool> createUser({
+    required String email,
+    required String password,
+    required String nom,
+    required String prenom,
+    required String telephone,
+    required String role,
+  }) async {
+    if (!isAdmin) return false;
 
-  void clearError() {
-    _state = _state.copyWith(error: null);
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      final db = await DatabaseHelper.instance.database;
+      await db.insert('utilisateurs', {
+        'nom': nom,
+        'prenom': prenom,
+        'adresse_email': email,
+        'telephone': telephone,
+        'mot_de_passe': password,
+        'role': role,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      return true;
+    } catch (e) {
+      debugPrint('User creation error: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

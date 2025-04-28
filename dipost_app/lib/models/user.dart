@@ -1,37 +1,48 @@
 class User {
-  final int? id;
+  final int id;
+  final String nom;
+  final String prenom;
   final String email;
-  final String phone;
-  final String passwordHash;
-  final String createdAt;
-  final String updatedAt;
+  final String? telephone;
+  final String role;
+  final DateTime? createdAt;
 
   User({
-    this.id,
+    required this.id,
+    required this.nom,
+    required this.prenom,
     required this.email,
-    required this.phone,
-    required this.passwordHash,
-    required this.createdAt,
-    required this.updatedAt,
+    this.telephone,
+    required this.role,
+    this.createdAt,
   });
+
+  bool get isAdmin => role == 'admin';
+  bool get isOperateur => role == 'operateur';
+  bool get isLivreur => role == 'livreur';
+  bool get isClient => role == 'client';
+
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      id: map['id_utilisateur'],
+      nom: map['nom'],
+      prenom: map['prenom'],
+      email: map['adresse_email'],
+      telephone: map['telephone'],
+      role: map['role'],
+      createdAt: map['created_at'] != null ? DateTime.parse(map['created_at']) : null,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'email': email,
-      'phone': phone,
-      'passwordHash': passwordHash,
+      'id_utilisateur': id,
+      'nom': nom,
+      'prenom': prenom,
+      'adresse_email': email,
+      'telephone': telephone,
+      'role': role,
+      'created_at': createdAt?.toIso8601String(),
     };
   }
-
-  factory User.fromMap(Map<String, dynamic> map) {
-  return User(
-    id: map['id'],
-    email: map['email'],
-    phone: map['phone'],
-    passwordHash: map['passwordHash'],
-    createdAt: DateTime.now().toIso8601String(),
-    updatedAt: DateTime.now().toIso8601String(),
-  );
-}
 }

@@ -1,102 +1,106 @@
-import 'package:dipost_app/providers/auth_provider.dart';
+import 'package:dipost_app/services/database_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/ibox.dart';
-import '../dao/ibox_dao.dart';
-import '../database/database_helper.dart';
+import '../services/ibox_service.dart';
 
-class IBoxProvider extends ChangeNotifier {
+class IBoxProvider with ChangeNotifier {
+  final IBoxService _iboxService = IBoxService();
   List<IBox> _iboxes = [];
   bool _isLoading = false;
-  String? _error;
+  String? _currentFilterStatut;
 
   List<IBox> get iboxes => _iboxes;
   bool get isLoading => _isLoading;
-  String? get error => _error;
+  String? get currentFilterStatut => _currentFilterStatut;
 
-  final IBoxDao _iboxDao;
-
-  IBoxProvider() : _iboxDao = IBoxDao(DatabaseHelper.instance);
-
-  Future<void> loadUserIBoxes(String postalId) async {
+  Future<void> loadIBoxes({String? statut}) async {
     _isLoading = true;
+    _currentFilterStatut = statut;
     notifyListeners();
 
     try {
-      _iboxes = await _iboxDao.getUserIBoxes(postalId);
-      _error = null;
+      if (statut != null) {
+        _iboxes = await _iboxService.getIBoxesByStatut(statut);
+      } else {
+        _iboxes = await _iboxService.getAllIBoxes();
+      }
     } catch (e) {
-      _error = 'Erreur de chargement: ${e.toString()}';
+      debugPrint('Error loading iBoxes: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<bool> addIBox(IBox newBox) async {
+  Future<int> addIBox(IBox newIBox) async {
     try {
-      await _iboxDao.createIBox(newBox);
-      await loadUserIBoxes(newBox.senderId ?? '');
+      final id = await _iboxService.createIBox(newIBox);
+      await loadIBoxes(statut: _currentFilterStatut);
+      return id;
+    } catch (e) {
+      debugPrint('Error adding iBox: $e');
+      return -1;
+    }
+  }
+
+  Future<bool> updateIBoxStatut(int id, String newStatut) async {
+    try {
+      await _iboxService.updateIBoxStatut(id, newStatut);
+      await loadIBoxes(statut: _currentFilterStatut);
       return true;
     } catch (e) {
-      _error = 'Erreur d\'ajout: ${e.toString()}';
-      notifyListeners();
+      debugPrint('Error updating iBox status: $e');
       return false;
     }
   }
 
-  Future<bool> updateIBoxStatus(int id, String newStatus) async {
+  Future<IBox?> getIBoxById(int id) async {
+  try {
+    return await _iboxService.getIBoxById(id);
+  } catch (e) {
+    debugPrint('Error getting iBox by id: $e');
+    return null;
+  }
+}
+
+Future<List<IBox>> getOperatorsIBoxes(int operatorId) async {
+    final db = await DatabaseHelper.instance.database;
+    final result = await db.rawQuery('''
+      SELECT ibox.* FROM ibox
+      JOIN user_ibox ON ibox.id_ibox = user_ibox.ibox_id
+      WHERE user_ibox.user_id = ?
+    ''', [operatorId]);
+
+    return result.map((map) => IBox.fromMap(map)).toList();
+  }
+
+  Future<bool> updateIBoxStatus(int iboxId, String newStatus, {int? operatorId}) async {
     try {
-      final index = _iboxes.indexWhere((box) => box.id == id);
-      if (index != -1) {
-        final updatedBox = _iboxes[index].copyWith(status: newStatus);
-        await _iboxDao.updateIBox(updatedBox);
-        await loadUserIBoxes(updatedBox.senderId ?? '');
-        return true;
+      final db = await DatabaseHelper.instance.database;
+      
+      if (operatorId != null) {
+        // Vérifier que l'opérateur gère bien cette iBox
+        final managed = await db.rawQuery('''
+          SELECT 1 FROM user_ibox 
+          WHERE user_id = ? AND ibox_id = ?
+        ''', [operatorId, iboxId]);
+
+        if (managed.isEmpty) return false;
       }
-      return false;
-    } catch (e) {
-      _error = 'Erreur de mise à jour: ${e.toString()}';
+
+      await db.update(
+        'ibox',
+        {'statut': newStatus},
+        where: 'id_ibox = ?',
+        whereArgs: [iboxId],
+      );
+      
       notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Update iBox status error: $e');
       return false;
     }
   }
 
- Future<bool> deleteIBox(int id, String postalId) async {
-  try {
-    await _iboxDao.deleteIBox(id);
-    await loadUserIBoxes(postalId);
-    return true;
-  } catch (e) {
-    _error = 'Erreur de suppression: ${e.toString()}';
-    notifyListeners();
-    return false;
-  }
-}
-
-Future<void> updateParcelInIBox(int iboxId, String parcelId) async {
-  try {
-    _isLoading = true;
-    notifyListeners();
-
-    // Trouver l'iBox à mettre à jour
-    final index = _iboxes.indexWhere((box) => box.id == iboxId);
-    if (index != -1) {
-      final updatedBox = _iboxes[index].copyWith(parcelId: parcelId);
-      await _iboxDao.updateIBox(updatedBox);
-      await loadUserIBoxes(updatedBox.senderId!);
-    }
-  } catch (e) {
-    _error = 'Erreur lors de l\'ajout du colis: $e';
-    rethrow;
-  } finally {
-    _isLoading = false;
-    notifyListeners();
-  }
-}
-
-  void clearError() {
-    _error = null;
-    notifyListeners();
-  }
 }

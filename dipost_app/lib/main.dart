@@ -1,28 +1,32 @@
-import 'package:dipost_app/database/database_helper.dart';
-import 'package:dipost_app/providers/ibox_provider.dart';
-import 'package:dipost_app/screens/auth/login_screen.dart';
-import 'package:dipost_app/screens/auth/register_screen.dart';
-import 'package:dipost_app/screens/home/home_screen.dart';
-import 'package:dipost_app/screens/ibox/ibox_list.dart';
-import 'package:dipost_app/screens/isignature/isignature_home.dart';
-import 'package:dipost_app/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:dipost_app/services/database_helper.dart';
+import 'constants/route_names.dart';
 import 'providers/auth_provider.dart';
+import 'providers/colis_provider.dart';
+import 'providers/ibox_provider.dart';
+import 'providers/signature_provider.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/main/dashboard_screen.dart';
+import 'screens/ibox/ibox_list_screen.dart';
+import 'screens/colis/colis_list_screen.dart';
+import 'screens/signature/signature_list_screen.dart';
+import 'screens/signature/signature_create_screen.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-   final dbHelper = DatabaseHelper.instance;
-  // Initialisation de la base de données
-  // await dbHelper.deleteAppDatabase();
-  await dbHelper.database;
+  
+  // Décommenter seulement pour la première initialisation ou réinitialisation
+  // await DatabaseHelper.instance.recreateDatabase();
   
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => IBoxProvider()),
+        ChangeNotifierProvider(create: (_) => ColisProvider()),
+        ChangeNotifierProvider(create: (_) => SignatureProvider()),
       ],
       child: const DiPostApp(),
     ),
@@ -35,41 +39,66 @@ class DiPostApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DiPost',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const AuthWrapper(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/ibox': (context) => const IBoxListScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/isignature': (context) => const ISignatureHomeScreen(),
-      },
+      title: 'DiPost App',
+      theme: _buildAppTheme(),
+      initialRoute: RouteNames.login,
+      routes: _buildAppRoutes(),
+      debugShowCheckedModeBanner: false,
+      onGenerateRoute: _handleUnknownRoutes,
     );
   }
-}
 
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+  ThemeData _buildAppTheme() {
+    return ThemeData(
+      primarySwatch: Colors.blue,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+      appBarTheme: const AppBarTheme(
+        elevation: 1,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        if (authProvider.state.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+  Map<String, WidgetBuilder> _buildAppRoutes() {
+    return {
+      RouteNames.login: (context) => const LoginScreen(),
+      RouteNames.signup: (context) => const SignupScreen(),
+      RouteNames.dashboard: (context) => const DashboardScreen(),
+      RouteNames.iboxList: (context) => const IBoxListScreen(),
+      RouteNames.colisList: (context) => const ColisListScreen(),
+      RouteNames.signatureList: (context) => const SignatureListScreen(),
+      RouteNames.signatureCreate: (context) => const SignatureCreateScreen(),
+    };
+  }
 
-        return authProvider.state.isAuthenticated
-            ? const HomeScreen()
-            : const LoginScreen();
-      },
+  Route<dynamic> _handleUnknownRoutes(RouteSettings settings) {
+    return MaterialPageRoute(
+      builder: (context) => Scaffold(
+        appBar: AppBar(title: const Text('Erreur')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Page non trouvée'),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.pushReplacementNamed(context, RouteNames.dashboard),
+                child: const Text('Retour à l\'accueil'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

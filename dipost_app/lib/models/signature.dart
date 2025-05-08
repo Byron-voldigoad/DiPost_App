@@ -3,7 +3,7 @@ class Signature {
   final int id;
   final int userId;
   final String documentPath;
-  final String niveau; // 'simple', 'avancee', 'qualifiee'
+  final String niveau;
   final DateTime horodatage;
   final String? certificat;
   final String? qrCode;

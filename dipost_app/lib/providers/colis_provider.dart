@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/colis.dart';
 import '../services/database_helper.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ColisProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
@@ -92,6 +94,81 @@ Colis? getColisById(int id) {
     return colis;
   } catch (e) {
     return null;
+  }
+}
+
+Future<void> updateColis(Colis colis) async {
+  try {
+    final db = await _dbHelper.database;
+    
+    await db.update(
+      'colis',
+      {
+        'contenu': colis.contenu,
+        'statut': colis.statut,
+        'id_ibox': colis.iboxId,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id_colis = ?',
+      whereArgs: [colis.id],
+    );
+
+    // Mettre à jour la liste locale
+    final index = _colisList.indexWhere((c) => c.id == colis.id);
+    if (index != -1) {
+      _colisList[index] = colis;
+      notifyListeners();
+    }
+
+    // Recharger les détails si nécessaire
+    await getColisWithDetails(colis.id);
+  } catch (e) {
+    debugPrint('Erreur lors de la mise à jour du colis: $e');
+    throw Exception('Erreur lors de la mise à jour du colis');
+  }
+}
+
+Future<void> createColis(Colis colis) async {
+  try {
+    final db = await _dbHelper.database;
+    
+    // Récupérer les infos du destinataire
+    final destinataire = await db.query(
+      'utilisateurs',
+      where: 'id_utilisateur = ?',
+      whereArgs: [colis.destinataireId],
+    );
+
+    if (destinataire.isEmpty) {
+      throw Exception('Destinataire non trouvé');
+    }
+
+    final colisData = {
+      'contenu': colis.contenu,
+      'statut': colis.statut,
+      'id_ibox': colis.iboxId,
+      'id_destinataire': colis.destinataireId,
+      'id_expediteur': colis.expediteurId,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    final id = await db.insert('colis', colisData);
+
+    // Mettre à jour la liste locale avec les infos complètes
+    final newColis = colis.copyWith(
+      id: id,
+      destinataireNom: destinataire.first['nom'] as String?,
+      destinatairePrenom: destinataire.first['prenom'] as String?,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    _colisList.add(newColis);
+    notifyListeners();
+  } catch (e) {
+    debugPrint('Erreur création colis: $e');
+    throw Exception('Erreur lors de la création du colis');
   }
 }
 

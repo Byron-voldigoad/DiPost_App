@@ -1,8 +1,9 @@
+import 'package:dipost_app/screens/colis/add_colis_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/colis_provider.dart';
-import 'colis_detail_screen.dart';
+import 'colis_detail_screen.dart'; // Assurez-vous que ce fichier existe
 
 class ColisListScreen extends StatefulWidget {
   const ColisListScreen({super.key});
@@ -15,7 +16,6 @@ class _ColisListScreenState extends State<ColisListScreen> {
   @override
   void initState() {
     super.initState();
-    // Charger les colis après un léger délai pour éviter le conflit avec le build
     Future.microtask(() => _loadColis());
   }
 
@@ -42,6 +42,13 @@ class _ColisListScreenState extends State<ColisListScreen> {
         backgroundColor: const Color.fromARGB(255, 119, 5, 154),
       ),
       body: _buildBody(colisProvider),
+      floatingActionButton: authProvider.isClient || authProvider.isAdmin || authProvider.isOperateur
+          ? FloatingActionButton(
+              onPressed: () => _navigateToAddColis(context),
+              backgroundColor: const Color.fromARGB(255, 119, 5, 154),
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -67,6 +74,8 @@ class _ColisListScreenState extends State<ColisListScreen> {
                       children: [
                         Text('Contenu: ${colis.contenu}'),
                         Text('Statut: ${colis.statut}'),
+                        if (colis.iboxId != null)
+                          Text('iBox: ${colis.iboxAdresse}'),
                       ],
                     ),
                     trailing: const Icon(Icons.chevron_right),
@@ -81,5 +90,16 @@ class _ColisListScreenState extends State<ColisListScreen> {
               },
             ),
     );
+  }
+
+  Future<void> _navigateToAddColis(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddColisScreen()),
+    );
+    
+    if (result == true) {
+      await _loadColis();
+    }
   }
 }

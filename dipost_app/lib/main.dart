@@ -1,3 +1,8 @@
+import 'package:dipost_app/providers/livraison_provider.dart';
+import 'package:dipost_app/providers/user_provider.dart';
+import 'package:dipost_app/screens/colis/demande_livraison_screen.dart';
+import 'package:dipost_app/screens/livraison/livraison_detail_screen.dart';
+import 'package:dipost_app/screens/livraison/livraison_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dipost_app/services/database_helper.dart';
@@ -13,6 +18,9 @@ import 'screens/ibox/ibox_list_screen.dart';
 import 'screens/colis/colis_list_screen.dart';
 import 'screens/signature/signature_list_screen.dart';
 import 'screens/signature/signature_create_screen.dart';
+import 'package:dipost_app/screens/colis/add_colis_screen.dart';
+import 'package:dipost_app/screens/livraison/livraison_list_user_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +35,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => IBoxProvider()),
         ChangeNotifierProvider(create: (_) => ColisProvider()),
         ChangeNotifierProvider(create: (_) => SignatureProvider()),
+        ChangeNotifierProvider(create: (_) => LivraisonProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const DiPostApp(),
     ),
@@ -78,6 +88,10 @@ class DiPostApp extends StatelessWidget {
       RouteNames.colisList: (context) => const ColisListScreen(),
       RouteNames.signatureList: (context) => const SignatureListScreen(),
       RouteNames.signatureCreate: (context) => const SignatureCreateScreen(),
+      RouteNames.livraisonList: (context) => const LivraisonScanScreen(),
+      RouteNames.livraisonListUser: (context) => const LivraisonListUserScreen(),
+      // RouteNames.livraisonDetail: (context) => const LivraisonDetailScreen()
+      
     };
   }
 

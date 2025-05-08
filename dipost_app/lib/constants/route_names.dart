@@ -15,6 +15,14 @@ class RouteNames {
   // Colis
   static const String colisList = '/colis';
   static const String colisDetail = '/colis/detail';
+  static const String addColis = '/add-colis';
+
+  static const String livraisonList = '/livraison';
+  static const String livraisonDetail = '/livraison/detail';
+
+  //static const String livraisonListUser = '/livraison';
+  static const String livraisonListUser = '/livraisons-user';
+  static const String livraisonDetailUser = '/livraison/detail';
   
   // Signature
   static const String signatureList = '/signatures';

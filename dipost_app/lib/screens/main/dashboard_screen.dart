@@ -1,3 +1,4 @@
+// dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -89,9 +90,15 @@ class DashboardScreen extends StatelessWidget {
           _DashboardAction(
             icon: Icons.delivery_dining,
             label: 'Livraisons',
-            onTap: () => Navigator.pushNamed(context, RouteNames.colisList),
+            onTap: () => Navigator.pushNamed(context, RouteNames.livraisonList),
           ),
-        if (authProvider.isAdmin || authProvider.isClient)
+           if (authProvider.isClient)
+          _DashboardAction(
+            icon: Icons.delivery_dining,
+            label: 'Vos Livraisons',
+            onTap: () => Navigator.pushNamed(context, RouteNames.livraisonListUser ),
+          ),
+        if (authProvider.isClient)
           _DashboardAction(
             icon: Icons.mail,
             label: 'Mes Colis',

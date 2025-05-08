@@ -63,14 +63,15 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE livraisons (
-        id_livraison INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_colis INTEGER NOT NULL,
-        id_livreur INTEGER NOT NULL,
+     CREATE TABLE livraisons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        colis_id INTEGER NOT NULL,
+        livreur_id INTEGER NOT NULL DEFAULT 0,
+        statut TEXT NOT NULL DEFAULT 'En attente',
+        date_demande TEXT,
         date_livraison TEXT,
-        statut_livraison TEXT NOT NULL,
-        FOREIGN KEY (id_colis) REFERENCES colis (id_colis),
-        FOREIGN KEY (id_livreur) REFERENCES utilisateurs (id_utilisateur)
+        FOREIGN KEY (colis_id) REFERENCES colis (id_colis),
+        FOREIGN KEY (livreur_id) REFERENCES utilisateurs (id_utilisateur)
       )
     ''');
 
@@ -105,6 +106,17 @@ class DatabaseHelper {
     FOREIGN KEY (user_id) REFERENCES utilisateurs (id_utilisateur),
     FOREIGN KEY (ibox_id) REFERENCES ibox (id_ibox)
   )
+''');
+
+await db.execute('''
+  CREATE TABLE historique_livraisons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      livraison_id INTEGER NOT NULL,
+      action TEXT NOT NULL, -- "Scan", "Livré", etc.
+      date_action TEXT NOT NULL,
+      user_id INTEGER, -- Livreur ou système
+      FOREIGN KEY (livraison_id) REFERENCES livraisons(id)
+    );
 ''');
 
     await _initializeDefaultData(db);
@@ -241,19 +253,20 @@ Future<void> _initializeDefaultData(Database db) async {
 
   // Ajout de livraisons de test
   final livraisons = [
-    {
-      'id_colis': 3,
-      'id_livreur': 3,
-      'date_livraison': DateTime.now().subtract(Duration(hours: 6)).toIso8601String(),
-      'statut_livraison': 'Livré',
-    },
-    {
-      'id_colis': 2,
-      'id_livreur': 3,
-      'date_livraison': DateTime.now().toIso8601String(),
-      'statut_livraison': 'En cours',
-    },
-  ];
+  {
+    'colis_id': 3,
+    'livreur_id': 3,
+    'statut': 'Livré',
+    'date_demande': DateTime.now().subtract(Duration(days: 1)).toIso8601String(),
+    'date_livraison': DateTime.now().subtract(Duration(hours: 6)).toIso8601String(),
+  },
+  {
+    'colis_id': 2,
+    'livreur_id': 3,
+    'statut': 'En cours',
+    'date_demande': DateTime.now().subtract(Duration(hours: 2)).toIso8601String(),
+  },
+];
 
   for (var livraison in livraisons) {
     await db.insert('livraisons', livraison);

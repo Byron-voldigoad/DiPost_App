@@ -24,26 +24,24 @@ List<Livraison> get userLivraisons => _userLivraisons;
   try {
     final db = await _dbHelper.database;
     
-    // Vérification des données avant insertion
-    if (livraison.colisId == null) {
-      throw Exception('colisId ne peut pas être null');
-    }
+    debugPrint('Tentative d\'insertion: ${livraison.toMap()}'); // Log des données
 
-    // Insertion avec gestion des erreurs SQLite
     final id = await db.insert(
       'livraisons',
       livraison.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     
-    // Recharger la liste après insertion
+    debugPrint('Insertion réussie avec ID: $id');
     await loadLivraisons();
     
     return id;
   } catch (e, stackTrace) {
-    debugPrint('Erreur création livraison: $e');
+    debugPrint('ERREUR DÉTAILLÉE - createLivraison:');
+    debugPrint('Type: ${e.runtimeType}');
+    debugPrint('Message: ${e.toString()}');
     debugPrint('Stack trace: $stackTrace');
-    throw Exception('Erreur technique lors de la création. Veuillez réessayer.');
+    throw Exception('Erreur technique lors de la création. Détails: ${e.toString()}');
   }
 }
 

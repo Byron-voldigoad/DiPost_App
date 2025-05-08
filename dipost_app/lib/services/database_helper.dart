@@ -66,8 +66,8 @@ class DatabaseHelper {
      CREATE TABLE livraisons (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         colis_id INTEGER NOT NULL,
-        livreur_id INTEGER NOT NULL DEFAULT 0,
-        statut TEXT NOT NULL DEFAULT 'En attente',
+        livreur_id INTEGER DEFAULT 0,
+        statut TEXT DEFAULT 'En attente',
         date_demande TEXT,
         date_livraison TEXT,
         FOREIGN KEY (colis_id) REFERENCES colis (id_colis),
@@ -135,8 +135,8 @@ Future<void> _initializeDefaultData(Database db) async {
   });
 
   await db.insert('utilisateurs', {
-    'nom': 'Opérateur',
-    'prenom': 'Principal',
+    'nom': 'Mark',
+    'prenom': 'Francois',
     'adresse_email': 'operateur@dipost.cm',
     'mot_de_passe': 'operateur123',
     'telephone': '237690000002',
@@ -145,8 +145,8 @@ Future<void> _initializeDefaultData(Database db) async {
   });
 
   await db.insert('utilisateurs', {
-    'nom': 'Livreur',
-    'prenom': 'Principal',
+    'nom': 'Robert',
+    'prenom': 'Jhon',
     'adresse_email': 'livreur@dipost.cm',
     'mot_de_passe': 'livreur123',
     'telephone': '237690000003',

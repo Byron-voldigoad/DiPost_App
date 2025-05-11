@@ -223,7 +223,7 @@ Future<void> _initializeDefaultData(Database db) async {
       'id_destinataire': 4, // Client
       'id_expediteur': 3, // Livreur
       'contenu': 'Colis fragile',
-      'statut': 'En transit',
+      'statut': 'En attente',
       'created_at': DateTime.now().subtract(Duration(hours: 2)).toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
     },
@@ -237,11 +237,11 @@ Future<void> _initializeDefaultData(Database db) async {
       'updated_at': DateTime.now().subtract(Duration(hours: 6)).toIso8601String(),
     },
     {
-      'id_ibox': null, // Pas encore assigné à une iBox
+      'id_ibox': 6, // Pas encore assigné à une iBox
       'id_destinataire': 5, // Client
       'id_expediteur': 1, // Admin
       'contenu': 'Commande e-commerce',
-      'statut': 'En préparation',
+      'statut': 'En attente',
       'created_at': DateTime.now().toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
     },
@@ -309,6 +309,84 @@ Future<void> recreateDatabase() async {
   final db = await _initDB('dipost.db');
   await db.close();
 }
+
+
+Future<Map<String, dynamic>> getDeliveryStats() async {
+  final db = await database;
+  final now = DateTime.now();
+  final startOfWeek = now.subtract(Duration(days: 7)).toIso8601String();
+  final startOfMonth = DateTime(now.year, now.month, 1).toIso8601String();
+  
+  final weekly = await db.rawQuery('''
+    SELECT 
+      COUNT(*) as total,
+      SUM(CASE WHEN statut = 'Livré' THEN 1 ELSE 0 END) as delivered,
+      SUM(CASE WHEN statut = 'En cours' THEN 1 ELSE 0 END) as in_progress,
+      SUM(CASE WHEN statut = 'En attente' THEN 1 ELSE 0 END) as pending
+    FROM livraisons
+    WHERE date_demande >= ?
+  ''', [startOfWeek]);
+
+  final monthly = await db.rawQuery('''
+    SELECT 
+      COUNT(*) as total,
+      SUM(CASE WHEN statut = 'Livré' THEN 1 ELSE 0 END) as delivered
+    FROM livraisons
+    WHERE date_demande >= ?
+  ''', [startOfMonth]);
+
+  return {
+    'week': weekly.first,
+    'month': monthly.first,
+  };
+}
+
+Future<List<Map<String, dynamic>>> getTopUsers() async {
+  final db = await database;
+  return await db.rawQuery('''
+    SELECT 
+      u.id_utilisateur, 
+      u.prenom, 
+      u.nom, 
+      u.role,
+      u.adresse_email,
+      COUNT(l.id) as activity_count,
+      (SELECT COUNT(*) FROM livraisons WHERE livreur_id = u.id_utilisateur AND statut = 'Livré') as deliveries_completed,
+      (SELECT COUNT(*) FROM colis WHERE id_expediteur = u.id_utilisateur) as colis_geres
+    FROM utilisateurs u
+    LEFT JOIN livraisons l ON u.id_utilisateur = l.livreur_id
+    WHERE u.role IN ('operateur', 'livreur')
+    GROUP BY u.id_utilisateur
+    ORDER BY 
+      CASE 
+        WHEN u.role = 'livreur' THEN deliveries_completed
+        WHEN u.role = 'operateur' THEN colis_geres
+        ELSE 0
+      END DESC
+    LIMIT 5
+  ''');
+}
+
+Future<Map<String, dynamic>> getAvgDeliveryTime() async {
+  final db = await database;
+  return await db.rawQuery('''
+    SELECT 
+      AVG(julianday(date_livraison) - julianday(date_demande)) as avg_days
+    FROM livraisons
+    WHERE statut = 'Livré' AND date_livraison IS NOT NULL
+  ''').then((r) => r.first);
+}
+
+Future<List<Map<String, dynamic>>> getIBoxStats() async {
+  final db = await database;
+  return await db.rawQuery('''
+    SELECT statut, COUNT(*) as count 
+    FROM ibox 
+    GROUP BY statut
+  ''');
+}
+
+
 
   Future close() async {
     final db = await instance.database;

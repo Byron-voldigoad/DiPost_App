@@ -101,12 +101,15 @@ Future<void> updateColis(Colis colis) async {
   try {
     final db = await _dbHelper.database;
     
+    // Mise à jour de tous les champs nécessaires
     await db.update(
       'colis',
       {
         'contenu': colis.contenu,
         'statut': colis.statut,
         'id_ibox': colis.iboxId,
+        'id_destinataire': colis.destinataireId,
+        'id_expediteur': colis.expediteurId,
         'updated_at': DateTime.now().toIso8601String(),
       },
       where: 'id_colis = ?',
@@ -120,11 +123,16 @@ Future<void> updateColis(Colis colis) async {
       notifyListeners();
     }
 
-    // Recharger les détails si nécessaire
-    await getColisWithDetails(colis.id);
+    // Recharger les détails
+    final updatedColis = await getColisWithDetails(colis.id);
+    if (updatedColis != null && index != -1) {
+      _colisList[index] = updatedColis;
+      notifyListeners();
+    }
+
   } catch (e) {
     debugPrint('Erreur lors de la mise à jour du colis: $e');
-    throw Exception('Erreur lors de la mise à jour du colis');
+    throw Exception('Erreur lors de la mise à jour du colis: ${e.toString()}');
   }
 }
 
@@ -137,38 +145,42 @@ Future<void> createColis(Colis colis) async {
       'utilisateurs',
       where: 'id_utilisateur = ?',
       whereArgs: [colis.destinataireId],
+      limit: 1,
     );
 
     if (destinataire.isEmpty) {
       throw Exception('Destinataire non trouvé');
     }
 
+    // Préparer les données pour l'insertion
     final colisData = {
       'contenu': colis.contenu,
       'statut': colis.statut,
-      'id_ibox': colis.iboxId,
+      'id_ibox': colis.iboxId, // peut être null
       'id_destinataire': colis.destinataireId,
       'id_expediteur': colis.expediteurId,
-      'created_at': DateTime.now().toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'created_at': colis.createdAt?.toIso8601String(),
+      'updated_at': colis.updatedAt?.toIso8601String(),
     };
 
+    // Insérer dans la base
     final id = await db.insert('colis', colisData);
 
-    // Mettre à jour la liste locale avec les infos complètes
+    // Créer l'objet Colis complet avec l'ID généré
     final newColis = colis.copyWith(
       id: id,
-      destinataireNom: destinataire.first['nom'] as String?,
-      destinatairePrenom: destinataire.first['prenom'] as String?,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+      destinataireNom: destinataire.first['nom'] as String,
+      destinatairePrenom: destinataire.first['prenom'] as String,
     );
 
+    // Mettre à jour la liste locale
     _colisList.add(newColis);
     notifyListeners();
+
+    debugPrint('Colis créé avec ID: $id');
   } catch (e) {
     debugPrint('Erreur création colis: $e');
-    throw Exception('Erreur lors de la création du colis');
+    throw Exception('Erreur lors de la création du colis: ${e.toString()}');
   }
 }
 

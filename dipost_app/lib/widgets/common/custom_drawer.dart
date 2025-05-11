@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../constants/route_names.dart';
+import '../../screens/theme/app_theme.dart'; // Assure-toi que ce chemin est correct
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -9,45 +10,59 @@ class CustomDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final primaryColor = AppTheme.getPrimaryColor(authProvider);
 
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text('${authProvider.user?.prenom} ${authProvider.user?.nom}'),
+            decoration: BoxDecoration(color: primaryColor),
+            accountName: Text(
+              '${authProvider.user?.prenom ?? ''} ${authProvider.user?.nom ?? ''}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             accountEmail: Text(authProvider.user?.email ?? ''),
-            currentAccountPicture: const CircleAvatar(
-              child: Icon(Icons.person, size: 40),
+            currentAccountPicture: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 40, color: primaryColor),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Accueil'),
-            onTap: () => Navigator.pushReplacementNamed(context, RouteNames.dashboard),
+          _buildDrawerTile(
+            context,
+            icon: Icons.home,
+            label: 'Accueil',
+            routeName: RouteNames.dashboard,
+            color: primaryColor,
           ),
           if (authProvider.isAdmin || authProvider.isOperateur)
-            ListTile(
-              leading: const Icon(Icons.storage),
-              title: const Text('iBox'),
-              onTap: () => Navigator.pushReplacementNamed(context, RouteNames.iboxList),
+            _buildDrawerTile(
+              context,
+              icon: Icons.storage,
+              label: 'iBox',
+              routeName: RouteNames.iboxList,
+              color: primaryColor,
             ),
           if (authProvider.isAdmin || authProvider.isOperateur || authProvider.isLivreur)
-            ListTile(
-              leading: const Icon(Icons.mail),
-              title: const Text('Colis'),
-              onTap: () => Navigator.pushReplacementNamed(context, RouteNames.colisList),
+            _buildDrawerTile(
+              context,
+              icon: Icons.mail,
+              label: 'Colis',
+              routeName: RouteNames.colisList,
+              color: primaryColor,
             ),
           if (authProvider.isAdmin)
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Utilisateurs'),
-              onTap: () => Navigator.pushReplacementNamed(context, RouteNames.userManagement),
+            _buildDrawerTile(
+              context,
+              icon: Icons.people,
+              label: 'Utilisateurs',
+              routeName: RouteNames.userManagement,
+              color: primaryColor,
             ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Déconnexion'),
+            leading: Icon(Icons.logout, color: primaryColor),
+            title: Text('Déconnexion', style: TextStyle(color: primaryColor)),
             onTap: () {
               authProvider.logout();
               Navigator.pushReplacementNamed(context, RouteNames.login);
@@ -55,6 +70,18 @@ class CustomDrawer extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDrawerTile(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required String routeName,
+      required Color color}) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(label, style: TextStyle(color: color)),
+      onTap: () => Navigator.pushReplacementNamed(context, routeName),
     );
   }
 }

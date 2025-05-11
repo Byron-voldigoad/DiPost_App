@@ -8,7 +8,7 @@ class AuthButton extends StatelessWidget {
   const AuthButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    required this.onPressed, required Color color,
   });
 
   @override

@@ -1,10 +1,12 @@
+import 'package:dipost_app/screens/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/colis.dart';
 import '../../providers/colis_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
 import './modifier_colis_screen.dart';
-import './demande_livraison_screen.dart'; // À créer
+import './demande_livraison_screen.dart';
 
 class ColisDetailScreen extends StatefulWidget {
   final int colisId;
@@ -42,7 +44,13 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
         _loadColis();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Colis modifié avec succès')),
+        SnackBar(
+          content: const Text('Colis modifié avec succès'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
     }
   }
@@ -60,75 +68,86 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
         _loadColis();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Demande de livraison envoyée')),
+        SnackBar(
+          content: const Text('Demande de livraison envoyée'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final primaryColor = AppTheme.getPrimaryColor(authProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détails du Colis'),
-        backgroundColor: const Color.fromARGB(255, 119, 5, 154),
+        backgroundColor: primaryColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
       ),
       body: FutureBuilder<Colis?>(
         future: _colisFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
           if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('Colis non trouvé'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 50, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Colis non trouvé',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
+            );
           }
 
           final colis = snapshot.data!;
-          final authProvider = Provider.of<AuthProvider>(context);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  primaryColor.withOpacity(0.05),
+                  Theme.of(context).colorScheme.background,
+                ],
+              ),
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDetailItem('Contenu', colis.contenu, context),
-                _buildDetailItem('Statut', colis.statut, context),
-                _buildDetailItem(
-                  'Destinataire', 
-                  '${colis.destinatairePrenom} ${colis.destinataireNom}',
-                  context,
-                ),
-                _buildDetailItem(
-                  'Expéditeur', 
-                  '${colis.expediteurPrenom} ${colis.expediteurNom}',
-                  context,
-                ),
-                if (colis.iboxId != null)
-                _buildDetailItem(
-                  'iBox', 
-                  colis.iboxAdresse ?? 'Non spécifiée',
-                  context,
-                ),
-                if (colis.createdAt != null)
-                  _buildDetailItem(
-                    'Date de création', 
-                    _formatDate(colis.createdAt!),
-                    context,
-                  ),
+                _buildInfoCard(colis, primaryColor, context),
                 const SizedBox(height: 20),
                 if (authProvider.isOperateur || authProvider.isAdmin)
                   _buildActionButton(
                     context,
                     'Modifier le colis',
                     () => _navigateToModifierColis(context, colis),
-                    const Color.fromARGB(255, 119, 5, 154),
+                    primaryColor,
                   )
                 else if (authProvider.isClient)
                   _buildActionButton(
                     context,
                     'Demander livraison',
                     () => _navigateToDemandeLivraison(context, colis),
-                    Colors.blue,
+                    primaryColor,
                   ),
               ],
             ),
@@ -138,24 +157,80 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
     );
   }
 
-  Widget _buildDetailItem(String label, String value, BuildContext context) {
+  Widget _buildInfoCard(Colis colis, Color primaryColor, BuildContext context) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildDetailRow('Contenu', colis.contenu, Icons.inventory, primaryColor),
+            _buildDetailRow('Statut', colis.statut, Icons.info, primaryColor),
+            _buildDetailRow(
+              'Destinataire', 
+              '${colis.destinatairePrenom} ${colis.destinataireNom}',
+              Icons.person,
+              primaryColor,
+            ),
+            _buildDetailRow(
+              'Expéditeur', 
+              '${colis.expediteurPrenom} ${colis.expediteurNom}',
+              Icons.person_outline,
+              primaryColor,
+            ),
+            if (colis.iboxId != null)
+              _buildDetailRow(
+                'iBox', 
+                colis.iboxAdresse ?? 'Non spécifiée',
+                Icons.location_on,
+                primaryColor,
+              ),
+            if (colis.createdAt != null)
+              _buildDetailRow(
+                'Date de création', 
+                _formatDate(colis.createdAt!),
+                Icons.calendar_today,
+                primaryColor,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, IconData icon, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const Divider(),
         ],
       ),
     );
@@ -167,17 +242,25 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
     VoidCallback onPressed,
     Color color,
   ) {
-    return Center(
+    return SizedBox(
+      width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          minimumSize: const Size(double.infinity, 50),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
         ),
         onPressed: onPressed,
         child: Text(
           text,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );

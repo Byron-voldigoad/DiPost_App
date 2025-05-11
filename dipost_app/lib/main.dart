@@ -1,8 +1,9 @@
 import 'package:dipost_app/providers/livraison_provider.dart';
 import 'package:dipost_app/providers/user_provider.dart';
 import 'package:dipost_app/screens/colis/demande_livraison_screen.dart';
-import 'package:dipost_app/screens/livraison/livraison_detail_screen.dart';
-import 'package:dipost_app/screens/livraison/livraison_list_screen.dart';
+import 'package:dipost_app/screens/livraison/livraison_list_livreur_screen.dart';
+import 'package:dipost_app/screens/livraison/livraison_scan_screen.dart';
+import 'package:dipost_app/screens/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dipost_app/services/database_helper.dart';
@@ -47,35 +48,18 @@ class DiPostApp extends StatelessWidget {
   const DiPostApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DiPost App',
-      theme: _buildAppTheme(),
-      initialRoute: RouteNames.login,
-      routes: _buildAppRoutes(),
-      debugShowCheckedModeBanner: false,
-      onGenerateRoute: _handleUnknownRoutes,
-    );
-  }
-
-  ThemeData _buildAppTheme() {
-    return ThemeData(
-      primarySwatch: Colors.blue,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-      appBarTheme: const AppBarTheme(
-        elevation: 1,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
+   Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        return MaterialApp(
+          title: 'DiPost App',
+          theme: AppTheme.getThemeData(authProvider),
+          initialRoute: RouteNames.login,
+          routes: _buildAppRoutes(),
+          debugShowCheckedModeBanner: false,
+          onGenerateRoute: _handleUnknownRoutes,
+        );
+      },
     );
   }
 
@@ -90,6 +74,7 @@ class DiPostApp extends StatelessWidget {
       RouteNames.signatureCreate: (context) => const SignatureCreateScreen(),
       RouteNames.livraisonList: (context) => const LivraisonScanScreen(),
       RouteNames.livraisonListUser: (context) => const LivraisonListUserScreen(),
+      RouteNames.livraisonListLivreur: (context) => const LivraisonListLivreurScreen(),
       // RouteNames.livraisonDetail: (context) => const LivraisonDetailScreen()
       
     };

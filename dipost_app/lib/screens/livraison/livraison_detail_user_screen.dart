@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/livraison.dart';
 import '../../providers/livraison_provider.dart';
+import '../theme/app_theme.dart';
+import 'package:intl/intl.dart';
 
 class LivraisonDetailUserScreen extends StatefulWidget {
   const LivraisonDetailUserScreen({super.key});
 
   @override
   State<LivraisonDetailUserScreen> createState() => _LivraisonDetailUserScreenState();
+}
+
+String _formatDate(DateTime? date) {
+  if (date == null) return 'Non spécifié';
+  return DateFormat('dd/MM/yyyy à HH:mm', 'fr_FR').format(date);
 }
 
 class _LivraisonDetailUserScreenState extends State<LivraisonDetailUserScreen> {
@@ -30,6 +37,7 @@ class _LivraisonDetailUserScreenState extends State<LivraisonDetailUserScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détails de la livraison'),
+        elevation: 0,
       ),
       body: FutureBuilder<Livraison?>(
         future: _livraisonFuture,
@@ -39,24 +47,57 @@ class _LivraisonDetailUserScreenState extends State<LivraisonDetailUserScreen> {
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text('Impossible de charger les détails'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Theme.of(context).primaryColor),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Impossible de charger les détails',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            );
           }
 
           final livraison = snapshot.data!;
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDetailItem('Statut', livraison.statut),
-                _buildDetailItem('Date de demande', livraison.dateDemande.toString()),
-                if (livraison.dateLivraison != null)
-                  _buildDetailItem('Date de livraison', livraison.dateLivraison.toString()),
-                _buildDetailItem('ID Colis', livraison.colisId.toString()),
-                _buildDetailItem('Livreur', livraison.livreurId == 0 
-                    ? 'Non assigné' 
-                    : 'Livreur #${livraison.livreurId}'),
+                Text(
+                  'Détails de la livraison #${livraison.id}',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetailItem(Icons.info, 'Statut', livraison.statut),
+                        _buildDetailItem(Icons.calendar_today, 'Date de demande', _formatDate(livraison.dateDemande)),
+                        if (livraison.dateLivraison != null)
+                          _buildDetailItem(Icons.event_available, 'Date de livraison', _formatDate(livraison.dateLivraison)),
+                        _buildDetailItem(Icons.inventory, 'ID Colis', livraison.colisId.toString()),
+                        _buildDetailItem(Icons.person, 'Livreur', livraison.livreurId == 0 ? 'Non assigné' : 'Livreur #${livraison.livreurId}'),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           );
@@ -65,18 +106,30 @@ class _LivraisonDetailUserScreenState extends State<LivraisonDetailUserScreen> {
     );
   }
 
-  Widget _buildDetailItem(String label, String value) {
+  Widget _buildDetailItem(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$label:',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const Divider(),
+              ],
+            ),
           ),
-          Text(value),
-          const Divider(),
         ],
       ),
     );

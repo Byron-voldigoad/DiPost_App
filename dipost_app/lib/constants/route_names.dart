@@ -17,12 +17,13 @@ class RouteNames {
   static const String colisDetail = '/colis/detail';
   static const String addColis = '/add-colis';
 
+  // Livraisons
   static const String livraisonList = '/livraison';
   static const String livraisonDetail = '/livraison/detail';
-
-  //static const String livraisonListUser = '/livraison';
   static const String livraisonListUser = '/livraisons-user';
   static const String livraisonDetailUser = '/livraison/detail';
+  static const String livraisonScan = '/livraison-scan';
+  static const String livraisonListLivreur = '/livraison-livreur';
   
   // Signature
   static const String signatureList = '/signatures';
@@ -30,6 +31,4 @@ class RouteNames {
   
   // Admin
   static const String userManagement = '/admin/users';
-  
-  // Ajoutez d'autres routes au besoin
 }

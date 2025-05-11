@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/ibox.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ibox_provider.dart';
+import '../theme/app_theme.dart';
 import 'ibox_detail_screen.dart';
 import 'ibox_create_screen.dart';
 
@@ -32,9 +33,10 @@ class _IBoxListScreenState extends State<IBoxListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Liste des iBoxes'),
-        backgroundColor: const Color.fromARGB(255, 119, 5, 154),
+        elevation: 0,
         actions: [
           PopupMenuButton<String>(
+            icon: Icon(Icons.filter_list, color: Theme.of(context).appBarTheme.iconTheme?.color),
             onSelected: (value) {
               setState(() {
                 _selectedStatutFilter = value == 'Tous' ? null : value;
@@ -54,7 +56,6 @@ class _IBoxListScreenState extends State<IBoxListScreen> {
       ),
       floatingActionButton: authProvider.isAdmin
           ? FloatingActionButton(
-            backgroundColor: const Color.fromARGB(255, 119, 5, 154),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -64,7 +65,10 @@ class _IBoxListScreenState extends State<IBoxListScreen> {
               child: const Icon(Icons.add),
             )
           : null,
-      body: _buildIBoxList(iboxProvider, authProvider),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: _buildIBoxList(iboxProvider, authProvider),
+      ),
     );
   }
 
@@ -74,31 +78,59 @@ class _IBoxListScreenState extends State<IBoxListScreen> {
     }
 
     if (iboxProvider.iboxes.isEmpty) {
-      return const Center(child: Text('Aucune iBox trouvée'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.location_off, size: 64, color: Theme.of(context).primaryColor),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune iBox trouvée',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(
       itemCount: iboxProvider.iboxes.length,
       itemBuilder: (context, index) {
         final ibox = iboxProvider.iboxes[index];
-        return ListTile(
-          title: Text(ibox.adresse),
-          subtitle: Text('Statut: ${ibox.statut}'),
-          trailing: authProvider.isAdmin
-              ? IconButton(
-                  icon: const Icon(Icons.edit,color: Color.fromARGB(255, 119, 5, 154)),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => IBoxDetailScreen(iboxId: ibox.id),
+        return Card(
+          elevation: 2,
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            leading: Icon(Icons.location_on, color: Theme.of(context).primaryColor),
+            title: Text(
+              ibox.adresse,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              'Statut: ${ibox.statut}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            trailing: authProvider.isAdmin
+                ? IconButton(
+                    icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => IBoxDetailScreen(iboxId: ibox.id),
+                      ),
                     ),
-                  ),
-                )
-              : null,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => IBoxDetailScreen(iboxId: ibox.id),
+                  )
+                : null,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => IBoxDetailScreen(iboxId: ibox.id),
+              ),
             ),
           ),
         );

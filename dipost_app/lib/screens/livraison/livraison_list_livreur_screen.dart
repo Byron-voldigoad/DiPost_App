@@ -3,14 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/database_helper.dart';
-import '../theme/app_theme.dart';
+import '../../constants/route_names.dart';
 import 'package:intl/intl.dart';
 
-class LivraisonListUserScreen extends StatefulWidget {
-  const LivraisonListUserScreen({super.key});
+class LivraisonListLivreurScreen extends StatefulWidget {
+  const LivraisonListLivreurScreen({super.key});
 
   @override
-  State<LivraisonListUserScreen> createState() => _LivraisonListUserScreenState();
+  State<LivraisonListLivreurScreen> createState() => _LivraisonListLivreurScreenState();
 }
 
 String formatDate(String? dateString) {
@@ -24,7 +24,7 @@ String formatDate(String? dateString) {
   }
 }
 
-class _LivraisonListUserScreenState extends State<LivraisonListUserScreen> {
+class _LivraisonListLivreurScreenState extends State<LivraisonListLivreurScreen> {
   List<Map<String, dynamic>> _livraisonsDetails = [];
   bool _isLoading = true;
 
@@ -36,9 +36,9 @@ class _LivraisonListUserScreenState extends State<LivraisonListUserScreen> {
 
   Future<void> _loadLivraisonsWithDetails() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.id;
+    final livreurId = authProvider.user?.id;
 
-    if (userId != null) {
+    if (livreurId != null) {
       final db = await DatabaseHelper.instance.database;
       
       final results = await db.rawQuery('''
@@ -50,16 +50,16 @@ class _LivraisonListUserScreenState extends State<LivraisonListUserScreen> {
           c.id_colis, 
           c.contenu as colis_contenu, 
           c.statut as colis_statut,
-          u.id_utilisateur as livreur_id,
-          u.nom as livreur_nom,
-          u.prenom as livreur_prenom,
-          u.telephone as livreur_telephone
+          u.id_utilisateur as destinataire_id,
+          u.nom as destinataire_nom,
+          u.prenom as destinataire_prenom,
+          u.telephone as destinataire_telephone
         FROM livraisons l
         JOIN colis c ON l.colis_id = c.id_colis
-        LEFT JOIN utilisateurs u ON l.livreur_id = u.id_utilisateur
-        WHERE c.id_destinataire = ?
+        JOIN utilisateurs u ON c.id_destinataire = u.id_utilisateur
+        WHERE l.livreur_id = ?
         ORDER BY l.date_demande DESC
-      ''', [userId]);
+      ''', [livreurId]);
 
       setState(() {
         _livraisonsDetails = results;
@@ -72,8 +72,15 @@ class _LivraisonListUserScreenState extends State<LivraisonListUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Vos Livraisons'),
+        title: const Text('Mes Livraisons'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.qr_code_scanner, color: Theme.of(context).appBarTheme.iconTheme?.color),
+            onPressed: () => Navigator.pushNamed(context, RouteNames.livraisonList),
+            tooltip: 'Scanner un QR code',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -85,7 +92,7 @@ class _LivraisonListUserScreenState extends State<LivraisonListUserScreen> {
                       Icon(Icons.local_shipping_outlined, size: 64, color: Theme.of(context).primaryColor),
                       const SizedBox(height: 16),
                       Text(
-                        'Aucune livraison trouvée',
+                        'Aucune livraison assignée',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: Theme.of(context).primaryColor,
                               fontWeight: FontWeight.w600,
@@ -135,19 +142,12 @@ class _LivraisonListUserScreenState extends State<LivraisonListUserScreen> {
                 _buildDetailRow(Icons.info, 'Statut', livraison['colis_statut']),
                 const SizedBox(height: 16),
                 Text(
-                  'Livreur',
+                  'Destinataire',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                livraison['livreur_id'] != null && livraison['livreur_id'] != 0
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildDetailRow(Icons.person, 'Nom', '${livraison['livreur_nom']} ${livraison['livreur_prenom']}'),
-                          _buildDetailRow(Icons.phone, 'Téléphone', livraison['livreur_telephone']),
-                        ],
-                      )
-                    : _buildDetailRow(Icons.person_off, 'Livreur', 'Non assigné'),
+                _buildDetailRow(Icons.person, 'Nom', '${livraison['destinataire_nom']} ${livraison['destinataire_prenom']}'),
+                _buildDetailRow(Icons.phone, 'Téléphone', livraison['destinataire_telephone'] ?? 'Non spécifié'),
                 const SizedBox(height: 16),
                 Text(
                   'Dates',
@@ -158,24 +158,11 @@ class _LivraisonListUserScreenState extends State<LivraisonListUserScreen> {
                 if (livraison['date_livraison'] != null)
                   _buildDetailRow(Icons.event_available, 'Livraison', formatDate(livraison['date_livraison'])),
                 const SizedBox(height: 16),
-                Text(
-                  'Code QR pour livraison',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: QrImageView(
-                    data: 'LIV-${livraison['livraison_id']}-COL-${livraison['id_colis']}',
-                    version: QrVersions.auto,
-                    size: 150,
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.all(8),
-                  ),
-                ),
+                
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    'À présenter au livreur pour confirmation',
+                    'Scannez Le code QR du client pour valider la livraison',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
                   ),
                 ),

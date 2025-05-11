@@ -106,8 +106,9 @@ Future<List<Livraison>> getLivraisonsByUserId(int userId) async {
       SELECT l.* FROM livraisons l
       JOIN colis c ON l.colis_id = c.id_colis
       WHERE c.id_destinataire = ?
+      OR c.id_expediteur = ?
       ORDER BY l.date_demande DESC
-    ''', [userId]);
+    ''', [userId,userId]);
 
     return result.map((map) => Livraison.fromMap(map)).toList();
   } catch (e) {
@@ -142,8 +143,9 @@ Future<void> loadLivraisonsByUser(int userId) async {
       SELECT l.* FROM livraisons l
       JOIN colis c ON l.colis_id = c.id_colis
       WHERE c.id_destinataire = ?
+      OR c.id_expediteur = ?
       ORDER BY l.date_demande DESC
-    ''', [userId]);
+    ''', [userId,userId]);
     
     _userLivraisons = result.map((map) => Livraison.fromMap(map)).toList();
     notifyListeners();

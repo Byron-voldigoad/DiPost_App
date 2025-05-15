@@ -7,6 +7,7 @@ import '../../providers/colis_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ibox_provider.dart';
 import '../../providers/user_provider.dart';
+import '../theme/app_theme.dart';
 
 class ModifierColisScreen extends StatefulWidget {
   final Colis colis;
@@ -41,7 +42,6 @@ class _ModifierColisScreenState extends State<ModifierColisScreen> {
     _selectedDestinataireId = widget.colis.destinataireId;
     _selectedExpediteurId = widget.colis.expediteurId;
     
-    // Utilisation de WidgetsBinding.instance pour différer le chargement
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
@@ -96,70 +96,87 @@ class _ModifierColisScreenState extends State<ModifierColisScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final primaryColor = AppTheme.getPrimaryColor(authProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Modifier le colis'),
-        elevation: 0,
+   return Container(
+  decoration: AppTheme.getBackgroundDecoration(authProvider),
+  child: Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: AppBar(
+      title: const Text('Modifier le colis'),
+      backgroundColor: primaryColor,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Modifier le colis #${widget.colis.id}',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 20),
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _contenuController,
-                            decoration: const InputDecoration(
-                              labelText: 'Contenu du colis*',
-                              border: OutlineInputBorder(),
-                            ),
-                            maxLines: 3,
+    ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Modifier le colis #${widget.colis.id}',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
                           ),
-                          const SizedBox(height: 16),
-
-                          if (authProvider.isAdmin || authProvider.isOperateur)
-                            _buildUserDropdown(
-                              title: 'Expéditeur*',
-                              value: _selectedExpediteurId,
-                              onChanged: (value) => setState(() => _selectedExpediteurId = value),
+                    ),
+                    const SizedBox(height: 20),
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      color: Colors.white.withOpacity(0.9),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _contenuController,
+                              decoration: InputDecoration(
+                                labelText: 'Contenu du colis*',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.8),
+                              ),
+                              maxLines: 3,
                             ),
+                            const SizedBox(height: 16),
 
-                          if (authProvider.isAdmin || authProvider.isOperateur)
-                            _buildUserDropdown(
-                              title: 'Destinataire*',
-                              value: _selectedDestinataireId,
-                              onChanged: (value) => setState(() => _selectedDestinataireId = value),
-                            ),
+                            if (authProvider.isAdmin || authProvider.isOperateur)
+                              _buildUserDropdown(
+                                title: 'Expéditeur*',
+                                value: _selectedExpediteurId,
+                                onChanged: (value) => setState(() => _selectedExpediteurId = value),
+                                primaryColor: primaryColor,
+                              ),
 
-                          _buildIBoxDropdown(),
-                          _buildStatutDropdown(),
-                        ],
+                            if (authProvider.isAdmin || authProvider.isOperateur)
+                              _buildUserDropdown(
+                                title: 'Destinataire*',
+                                value: _selectedDestinataireId,
+                                onChanged: (value) => setState(() => _selectedDestinataireId = value),
+                                primaryColor: primaryColor,
+                              ),
+
+                            _buildIBoxDropdown(primaryColor),
+                            _buildStatutDropdown(primaryColor),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildSaveButton(),
-                ],
+                    const SizedBox(height: 20),
+                    _buildSaveButton(primaryColor),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -167,6 +184,7 @@ class _ModifierColisScreenState extends State<ModifierColisScreen> {
     required String title,
     required int? value,
     required ValueChanged<int?> onChanged,
+    required Color primaryColor,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,17 +205,23 @@ class _ModifierColisScreenState extends State<ModifierColisScreen> {
                 )),
           ],
           onChanged: onChanged,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.8),
           ),
+          dropdownColor: Colors.white.withOpacity(0.95),
+          style: TextStyle(color: primaryColor),
         ),
         const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildIBoxDropdown() {
+  Widget _buildIBoxDropdown(Color primaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -217,17 +241,23 @@ class _ModifierColisScreenState extends State<ModifierColisScreen> {
                 )),
           ],
           onChanged: (value) => setState(() => _selectedIBoxId = value),
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.8),
           ),
+          dropdownColor: Colors.white.withOpacity(0.95),
+          style: TextStyle(color: primaryColor),
         ),
         const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildStatutDropdown() {
+  Widget _buildStatutDropdown(Color primaryColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -247,23 +277,42 @@ class _ModifierColisScreenState extends State<ModifierColisScreen> {
               setState(() => _selectedStatut = value);
             }
           },
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.8),
           ),
+          dropdownColor: Colors.white.withOpacity(0.95),
+          style: TextStyle(color: primaryColor),
         ),
       ],
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(Color primaryColor) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor.withOpacity(0.9),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
         onPressed: _isSaving ? null : _saveChanges,
         child: _isSaving
-            ? const CircularProgressIndicator()
-            : const Text('Enregistrer les modifications'),
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                'Enregistrer les modifications',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }

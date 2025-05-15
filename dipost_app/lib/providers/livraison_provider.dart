@@ -14,11 +14,27 @@ class LivraisonProvider with ChangeNotifier {
 List<Livraison> get userLivraisons => _userLivraisons;
 
   Future<void> loadLivraisons() async {
+  try {
     final db = await _dbHelper.database;
-    final result = await db.query('livraisons');
-    _livraisons = result.map((map) => Livraison.fromMap(map)).toList();
+    final result = await db.rawQuery('''
+      SELECT l.*, u.prenom as livreur_prenom, u.nom as livreur_nom 
+      FROM livraisons l
+      LEFT JOIN utilisateurs u ON l.livreur_id = u.id_utilisateur
+      ORDER BY l.date_demande DESC
+    ''');
+    
+    debugPrint('Résultats bruts: $result');
+    
+    _livraisons = result.map((map) {
+      debugPrint('Mapping livraison: $map');
+      return Livraison.fromMap(map);
+    }).toList();
+    
     notifyListeners();
+  } catch (e) {
+    debugPrint('Erreur loadLivraisons: $e');
   }
+}
 
   Future<int> createLivraison(Livraison livraison) async {
   try {
@@ -58,18 +74,21 @@ List<Livraison> get userLivraisons => _userLivraisons;
   }
 
   Future<void> assignerLivreur(int livraisonId, int livreurId) async {
+  try {
     final db = await _dbHelper.database;
-    await db.update(
-      'livraisons',
-      {
-        'id_livreur': livreurId,
-        'statut_livraison': 'Assignée',
-      },
-      where: 'id_livraison = ?',
-      whereArgs: [livraisonId],
-    );
+    await db.rawUpdate('''
+      UPDATE livraisons 
+      SET livreur_id = ?, statut = 'En cours', date_modification = ?
+      WHERE id = ?
+    ''', [livreurId, DateTime.now().toIso8601String(), livraisonId]);
+    
+    debugPrint('Assignation réussie: Livreur $livreurId -> Livraison $livraisonId');
     await loadLivraisons();
+  } catch (e) {
+    debugPrint('Erreur assignerLivreur: $e');
+    throw Exception('Échec de l\'assignation: ${e.toString()}');
   }
+}
 
   Future<Livraison?> getLivraisonByColisId(int colisId) async {
   try {

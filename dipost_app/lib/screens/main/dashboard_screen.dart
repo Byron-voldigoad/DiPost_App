@@ -13,9 +13,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final theme = Theme.of(context);
     final primaryColor = AppTheme.getPrimaryColor(authProvider);
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -24,7 +22,6 @@ class DashboardScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'Déconnexion',
             onPressed: () {
               authProvider.logout();
               Navigator.pushReplacementNamed(context, RouteNames.login);
@@ -33,24 +30,31 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
       drawer: const CustomDrawer(),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromRGBO(primaryColor.red, primaryColor.green, primaryColor.blue, 0.05),
-              isDarkMode ? theme.colorScheme.surface : theme.colorScheme.surface,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            children: [
+              // Image de fond qui couvre tout l'écran
+              Container(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                decoration: AppTheme.getBackgroundDecoration(authProvider),
+              ),
+              // Contenu défilable
+              _buildDashboardContent(context, authProvider, primaryColor),
+              _buildNotificationBar(context, authProvider),
             ],
-          ),
-        ),
-        child: _buildDashboardContent(context, authProvider, primaryColor),
+          );
+        },
       ),
       floatingActionButton: _buildFloatingActionButton(context, authProvider),
     );
   }
 
-  Widget? _buildFloatingActionButton(BuildContext context, AuthProvider authProvider) {
+  Widget? _buildFloatingActionButton(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) {
     if (authProvider.isAdmin || authProvider.isOperateur) {
       return FloatingActionButton(
         onPressed: () {
@@ -66,11 +70,18 @@ class DashboardScreen extends StatelessWidget {
     return null;
   }
 
-  Widget _buildDashboardContent(BuildContext context, AuthProvider authProvider, Color primaryColor) {
-    return RefreshIndicator(
-      onRefresh: () async => await Future.delayed(const Duration(seconds: 1)),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+  Widget _buildDashboardContent(
+    BuildContext context,
+    AuthProvider authProvider,
+    Color primaryColor,
+  ) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(20),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -83,7 +94,11 @@ class DashboardScreen extends StatelessWidget {
             if (authProvider.isAdmin) ...[
               _buildKPIRow(context),
               const SizedBox(height: 20),
-              _buildSectionTitle(context, 'Statistiques détaillées', primaryColor),
+              _buildSectionTitle(
+                context,
+                'Statistiques détaillées',
+                primaryColor,
+              ),
               const SizedBox(height: 15),
               _buildStatsGrid(context),
             ],
@@ -157,7 +172,12 @@ class DashboardScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Color.fromRGBO(color.red, color.green, color.blue, 0.1),
+                    color: Color.fromRGBO(
+                      color.red,
+                      color.green,
+                      color.blue,
+                      0.1,
+                    ),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, size: 18, color: color),
@@ -165,9 +185,9 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -175,9 +195,9 @@ class DashboardScreen extends StatelessWidget {
             Text(
               value.toString(),
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ],
         ),
@@ -219,13 +239,22 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWelcomeCard(BuildContext context, AuthProvider authProvider, Color primaryColor) {
+  Widget _buildWelcomeCard(
+    BuildContext context,
+    AuthProvider authProvider,
+    Color primaryColor,
+  ) {
     final theme = Theme.of(context);
 
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      shadowColor: Color.fromRGBO(primaryColor.red, primaryColor.green, primaryColor.blue, 0.2),
+      shadowColor: Color.fromRGBO(
+        primaryColor.red,
+        primaryColor.green,
+        primaryColor.blue,
+        0.2,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -233,7 +262,12 @@ class DashboardScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Color.fromRGBO(primaryColor.red, primaryColor.green, primaryColor.blue, 0.1),
+                color: Color.fromRGBO(
+                  primaryColor.red,
+                  primaryColor.green,
+                  primaryColor.blue,
+                  0.1,
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.person, size: 30, color: primaryColor),
@@ -244,7 +278,7 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bonjour, ${authProvider.user?.prenom ?? 'Utilisateur'}!',
+                    '${authProvider.user?.prenom ?? 'Utilisateur'}',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -260,7 +294,12 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             Chip(
-              backgroundColor: Color.fromRGBO(primaryColor.red, primaryColor.green, primaryColor.blue, 0.1),
+              backgroundColor: Color.fromRGBO(
+                primaryColor.red,
+                primaryColor.green,
+                primaryColor.blue,
+                0.1,
+              ),
               label: Text(
                 authProvider.user?.role.toUpperCase() ?? '',
                 style: TextStyle(
@@ -275,32 +314,40 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, Color primaryColor) {
+  Widget _buildSectionTitle(
+    BuildContext context,
+    String title,
+    Color primaryColor,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: primaryColor,
-            ),
+          fontWeight: FontWeight.bold,
+          color: primaryColor,
+        ),
       ),
     );
   }
 
-  Widget _buildActionGrid(BuildContext context, AuthProvider authProvider, Color primaryColor) {
+  Widget _buildActionGrid(
+    BuildContext context,
+    AuthProvider authProvider,
+    Color primaryColor,
+  ) {
     final actions = [
       if (authProvider.isAdmin || authProvider.isOperateur)
         _DashboardAction(
           icon: Icons.storage,
-          label: 'Gestion iBox',
+          label: 'iBox',
           color: primaryColor,
           onTap: () => Navigator.pushNamed(context, RouteNames.iboxList),
         ),
       if (authProvider.isAdmin || authProvider.isOperateur)
         _DashboardAction(
           icon: Icons.mail,
-          label: 'Gestion Colis',
+          label: 'Colis',
           color: primaryColor,
           onTap: () => Navigator.pushNamed(context, RouteNames.colisList),
         ),
@@ -311,26 +358,31 @@ class DashboardScreen extends StatelessWidget {
           color: primaryColor,
           onTap: () => Navigator.pushNamed(context, RouteNames.userManagement),
         ),
-      if (authProvider.isAdmin)
+      if (authProvider.isAdmin || authProvider.isOperateur)
         _DashboardAction(
           icon: Icons.delivery_dining,
           label: 'Livraisons',
           color: primaryColor,
-          onTap: () => Navigator.pushNamed(context, RouteNames.livraisonList),
+          onTap:
+              () =>
+                  Navigator.pushNamed(context, RouteNames.livraisonManagement),
         ),
       if (authProvider.isLivreur)
         _DashboardAction(
           icon: Icons.delivery_dining,
-          label: 'Mes Livraisons',
+          label: 'Livraisons',
           color: primaryColor,
-          onTap: () => Navigator.pushNamed(context, RouteNames.livraisonListLivreur),
+          onTap:
+              () =>
+                  Navigator.pushNamed(context, RouteNames.livraisonListLivreur),
         ),
       if (authProvider.isClient)
         _DashboardAction(
           icon: Icons.delivery_dining,
-          label: 'Mes Livraisons',
+          label: 'Livraisons',
           color: primaryColor,
-          onTap: () => Navigator.pushNamed(context, RouteNames.livraisonListUser),
+          onTap:
+              () => Navigator.pushNamed(context, RouteNames.livraisonListUser),
         ),
       if (authProvider.isClient)
         _DashboardAction(
@@ -351,13 +403,14 @@ class DashboardScreen extends StatelessWidget {
         crossAxisSpacing: 15,
       ),
       itemCount: actions.length,
-      itemBuilder: (context, index) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: actions[index],
-      ),
+      itemBuilder:
+          (context, index) => Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: actions[index],
+          ),
     );
   }
 
@@ -373,6 +426,71 @@ class DashboardScreen extends StatelessWidget {
         ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  Widget _buildNotificationBar(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: DatabaseHelper.instance.query(
+        'notifications',
+        where: 'id_utilisateur = ? AND statut = ?',
+        whereArgs: [authProvider.user?.id, 'non_lu'],
+      ),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty)
+          return const SizedBox();
+
+        final notifications = snapshot.data!;
+        return Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            color: Colors.black.withOpacity(0.8),
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Notifications (${notifications.length})',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...notifications.map((notification) {
+                  return ListTile(
+                    leading: const Icon(
+                      Icons.notifications,
+                      color: Colors.white,
+                    ),
+                    title: Text(
+                      notification['message'],
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () async {
+                        await DatabaseHelper.instance.update(
+                          'notifications',
+                          {'statut': 'lu'},
+                          where: 'id_notification = ?',
+                          whereArgs: [notification['id_notification']],
+                        );
+                        (context as Element).markNeedsBuild();
+                      },
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -412,9 +530,9 @@ class _DashboardAction extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -460,7 +578,12 @@ class DeliveryStatsCard extends StatelessWidget {
                     if (constraints.maxWidth < 600) {
                       return _buildMobileLayout(context, weekStats, monthStats);
                     } else {
-                      return _buildDesktopLayout(context, weekStats, monthStats, theme);
+                      return _buildDesktopLayout(
+                        context,
+                        weekStats,
+                        monthStats,
+                        theme,
+                      );
                     }
                   },
                 ),
@@ -525,11 +648,7 @@ class DeliveryStatsCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Container(
-          width: 1,
-          height: 100,
-          color: theme.dividerColor,
-        ),
+        Container(width: 1, height: 100, color: theme.dividerColor),
         const SizedBox(width: 8),
         Expanded(
           child: _buildStatItem(
@@ -561,39 +680,61 @@ class DeliveryStatsCard extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         _buildCompactStatRow(context, 'Total', total.toString(), Colors.black),
         if (showDetails) ...[
-          _buildCompactStatRow(context, 'Livrées', delivered.toString(), Colors.green),
-          _buildCompactStatRow(context, 'En cours', inProgress.toString(), Colors.orange),
-          _buildCompactStatRow(context, 'En attente', pending.toString(), Colors.blue),
+          _buildCompactStatRow(
+            context,
+            'Livrées',
+            delivered.toString(),
+            Colors.green,
+          ),
+          _buildCompactStatRow(
+            context,
+            'En cours',
+            inProgress.toString(),
+            Colors.orange,
+          ),
+          _buildCompactStatRow(
+            context,
+            'En attente',
+            pending.toString(),
+            Colors.blue,
+          ),
         ] else ...[
-          _buildCompactStatRow(context, 'Livrées', delivered.toString(), Colors.green),
+          _buildCompactStatRow(
+            context,
+            'Livrées',
+            delivered.toString(),
+            Colors.green,
+          ),
         ],
       ],
     );
   }
 
-  Widget _buildCompactStatRow(BuildContext context, String label, String value, Color color) {
+  Widget _buildCompactStatRow(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            '$label:',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text('$label:', style: Theme.of(context).textTheme.bodyMedium),
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -604,7 +745,11 @@ class DeliveryStatsCard extends StatelessWidget {
     final delivered = stats['delivered'] ?? 0;
     final inProgress = stats['in_progress'] ?? 0;
     final pending = stats['pending'] ?? 0;
-    final total = [delivered, inProgress, pending].reduce((a, b) => a > b ? a : b);
+    final total = [
+      delivered,
+      inProgress,
+      pending,
+    ].reduce((a, b) => a > b ? a : b);
 
     if (total == 0) {
       return const SizedBox(
@@ -640,7 +785,10 @@ class DeliveryStatsCard extends StatelessWidget {
                     case 2:
                       return const Padding(
                         padding: EdgeInsets.only(top: 4),
-                        child: Text('En attente', style: TextStyle(fontSize: 12)),
+                        child: Text(
+                          'En attente',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       );
                     default:
                       return const Text('');
@@ -654,20 +802,28 @@ class DeliveryStatsCard extends StatelessWidget {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) {
-                  return Text(value.toInt().toString(), style: const TextStyle(fontSize: 12));
+                  return Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(fontSize: 12),
+                  );
                 },
               ),
             ),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: theme.colorScheme.surfaceContainerHighest,
-              strokeWidth: 1,
-            ),
+            getDrawingHorizontalLine:
+                (value) => FlLine(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  strokeWidth: 1,
+                ),
           ),
           borderData: FlBorderData(show: false),
           barGroups: [
@@ -716,15 +872,26 @@ class DeliveryStatsCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: SizedBox(
           height: 200,
-          child: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
+          child: Center(
+            child: CircularProgressIndicator(color: theme.colorScheme.primary),
+          ),
         ),
       ),
     );
   }
 }
 
-class TopUsersCard extends StatelessWidget {
+class TopUsersCard extends StatefulWidget {
   const TopUsersCard({super.key});
+
+  @override
+  State<TopUsersCard> createState() => _TopUsersCardState();
+}
+
+class _TopUsersCardState extends State<TopUsersCard> {
+  Future<void> refreshData() async {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -765,68 +932,13 @@ class TopUsersCard extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.refresh, size: 20),
-                      onPressed: () {},
+                      onPressed: refreshData,
                       tooltip: 'Actualiser',
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                ...users.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final user = entry.value;
-                  final rank = index + 1;
-                  final isLivreur = user['role'] == 'livreur';
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.grey[850] : Colors.grey[50],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      leading: _buildUserAvatar(user, rank),
-                      title: Text(
-                        '${user['prenom']} ${user['nom']}',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user['role'].toUpperCase(),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: isLivreur ? Colors.blue : Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            user['adresse_email'],
-                            style: theme.textTheme.bodySmall,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            user['role'] == 'livreur'
-                                ? '${user['deliveries_completed']} liv.'
-                                : '${user['colis_geres']} colis',
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          Text(
-                            user['role'] == 'livreur' ? 'Livrées' : 'Gérés',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+                _buildUsersList(users, theme, isDarkMode),
               ],
             ),
           ),
@@ -835,15 +947,91 @@ class TopUsersCard extends StatelessWidget {
     );
   }
 
+  Widget _buildUsersList(
+    List<Map<String, dynamic>> users,
+    ThemeData theme,
+    bool isDarkMode,
+  ) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: users.length,
+      itemBuilder: (context, index) {
+        final user = users[index];
+        final rank = index + 1;
+        final isLivreur = user['role'] == 'livreur';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.grey[850] : Colors.grey[50],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: _buildUserTile(user, rank, theme, isLivreur),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserTile(
+    Map<String, dynamic> user,
+    int rank,
+    ThemeData theme,
+    bool isLivreur,
+  ) {
+    return ListTile(
+      leading: _buildUserAvatar(user, rank),
+      title: Text(
+        '${user['prenom']} ${user['nom']}',
+        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            user['role'].toUpperCase(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isLivreur ? Colors.blue : Colors.green,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            user['adresse_email'],
+            style: theme.textTheme.bodySmall,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            isLivreur
+                ? '${user['deliveries_completed']} liv.'
+                : '${user['colis_geres']} colis',
+            style: theme.textTheme.titleMedium,
+          ),
+          Text(
+            isLivreur ? 'Livrées' : 'Gérés',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildUserAvatar(Map<String, dynamic> user, int rank) {
+    final roleColor = _getRoleColor(user['role']);
+
     return Stack(
       alignment: Alignment.center,
       children: [
         CircleAvatar(
           backgroundColor: Color.fromRGBO(
-            _getRoleColor(user['role']).red,
-            _getRoleColor(user['role']).green,
-            _getRoleColor(user['role']).blue,
+            roleColor.red,
+            roleColor.green,
+            roleColor.blue,
             0.2,
           ),
           child: Text(
@@ -903,7 +1091,11 @@ class TopUsersCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(Icons.people_alt_outlined, size: 40, color: theme.colorScheme.onSurface),
+            Icon(
+              Icons.people_alt_outlined,
+              size: 40,
+              color: theme.colorScheme.onSurface,
+            ),
             const SizedBox(height: 10),
             Text(
               'Aucune activité utilisateur',

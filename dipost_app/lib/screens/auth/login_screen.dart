@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../constants/route_names.dart';
 import '../../widgets/auth/auth_form_field.dart';
 import '../../widgets/auth/auth_button.dart';
+import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,19 +28,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final primaryColor = AppTheme.getPrimaryColor(authProvider);
+    
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF7B1FA2), // Purple
-              Color(0xFF1976D2), // Blue
-              Color(0xFFFFA000), // Orange
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: AppTheme.getBackgroundDecoration(authProvider),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -47,7 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.0),
               ),
-              elevation: 8.0,
+              elevation: 4.0,
+              color: Color.lerp(Colors.white, primaryColor, 0.1), // Alternative à withOpacity
+              margin: const EdgeInsets.all(20),
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
@@ -56,52 +52,62 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
+                      Text(
                         'Bienvenue sur DiPost',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          color: primaryColor,
                         ),
                       ),
                       const SizedBox(height: 24),
-                      AuthFormField(
-                        controller: _emailController,
-                        label: 'Email',
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer votre email';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Email invalide';
-                          }
-                          return null;
-                        },
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Color.lerp(Colors.grey[50], primaryColor, 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: AuthFormField(
+                          controller: _emailController,
+                          label: 'Email',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Veuillez entrer votre email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Email invalide';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      AuthFormField(
-                        controller: _passwordController,
-                        label: 'Mot de passe',
-                        obscureText: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer votre mot de passe';
-                          }
-                          if (value.length < 6) {
-                            return 'Le mot de passe doit contenir au moins 6 caractères';
-                          }
-                          return null;
-                        },
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Color.lerp(Colors.grey[50], primaryColor, 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: AuthFormField(
+                          controller: _passwordController,
+                          label: 'Mot de passe',
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Veuillez entrer votre mot de passe';
+                            }
+                            if (value.length < 6) {
+                              return 'Le mot de passe doit contenir au moins 6 caractères';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
                       const SizedBox(height: 24),
                       AuthButton(
                         text: 'Se connecter',
-                         color: Colors.purple, 
+                        color: primaryColor,
                         onPressed: () async {
-                          if (_formKey.currentState!.validate()) {
-                            final authProvider =
-                                Provider.of<AuthProvider>(context, listen: false);
+                          if (_formKey.currentState?.validate() ?? false) {
                             final success = await authProvider.login(
                               _emailController.text,
                               _passwordController.text,
@@ -110,15 +116,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (!mounted) return;
 
                             if (success) {
-                              Navigator.pushReplacementNamed(
-                                  context, RouteNames.dashboard);
+                              if (context.mounted) {
+                                Navigator.pushReplacementNamed(
+                                    context, RouteNames.dashboard);
+                              }
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text('Email ou mot de passe incorrect'),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Email ou mot de passe incorrect'),
+                                    backgroundColor: Color.lerp(
+                                      primaryColor, 
+                                      Colors.black, 
+                                      0.2
+                                    ),
+                                  ),
+                                );
+                              }
                             }
                           }
                         },
@@ -128,20 +142,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () {
                           Navigator.pushNamed(context, RouteNames.signup);
                         },
-                        child: const Text(
+                        child: Text(
                           'Créer un compte',
-                          style: TextStyle(color: Color(0xFF7B1FA2)),
+                          style: TextStyle(
+                            color: Color.lerp(primaryColor, Colors.white, 0.2),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, RouteNames.forgotPassword);
-                        },
-                        child: const Text(
-                          'Mot de passe oublié?',
-                          style: TextStyle(color: Color(0xFF1976D2)),
-                        ),
-                      ),
+                      
                     ],
                   ),
                 ),

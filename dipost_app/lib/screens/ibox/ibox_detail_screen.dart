@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/ibox.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/ibox_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -59,61 +60,110 @@ class _IBoxDetailScreenState extends State<IBoxDetailScreen> {
     }
   }
 
+  Future<void> _updateAdresse(String newAdresse) async {
+    final provider = Provider.of<IBoxProvider>(context, listen: false);
+    final success = await provider.updateIBoxAdresse(_ibox.id, newAdresse);
+
+    if (!mounted) return;
+
+    if (success) {
+      await _loadIBoxDetails();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Adresse mise à jour avec succès'),
+          backgroundColor: Theme.of(context).primaryColor,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Échec de la mise à jour de l\'adresse'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Détails iBox'),
-        elevation: 0,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'iBox #${_ibox.id}',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final primaryColor = AppTheme.getPrimaryColor(authProvider);
+
+    return Container(
+      decoration: AppTheme.getBackgroundDecoration(authProvider),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Détails iBox'),
+          backgroundColor: primaryColor,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          ),
+        ),
+        body:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 24.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'iBox #${_ibox.id}',
+                        style: TextStyle(
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
+                          color: primaryColor,
                         ),
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildDetailItem('Adresse', _ibox.adresse),
-                          const SizedBox(height: 16),
-                          _buildDetailItemWithDropdown(
-                            'Statut',
-                            _ibox.statut,
-                            IBox.statutsPossibles,
-                            _updateStatut,
-                          ),
-                        ],
                       ),
-                    ),
+                      const SizedBox(height: 24),
+                      Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        color: Colors.white.withOpacity(0.9),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildEditableDetailItem(
+                                'Adresse',
+                                _ibox.adresse,
+                                _updateAdresse,
+                                primaryColor,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildDetailItemWithDropdown(
+                                'Statut',
+                                _ibox.statut,
+                                IBox.statutsPossibles,
+                                _updateStatut,
+                                primaryColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+      ),
     );
   }
 
-  Widget _buildDetailItem(String label, String value) {
+  Widget _buildDetailItem(String label, String value, Color primaryColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
           label == 'Adresse' ? Icons.location_on : Icons.info,
-          color: Theme.of(context).primaryColor,
+          color: primaryColor,
           size: 20,
         ),
         const SizedBox(width: 8),
@@ -123,13 +173,14 @@ class _IBoxDetailScreenState extends State<IBoxDetailScreen> {
             children: [
               Text(
                 '$label:',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
               ),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+              Text(value, style: const TextStyle(fontSize: 16)),
             ],
           ),
         ),
@@ -142,15 +193,12 @@ class _IBoxDetailScreenState extends State<IBoxDetailScreen> {
     String currentValue,
     List<String> options,
     Function(String) onChanged,
+    Color primaryColor,
   ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          Icons.track_changes,
-          color: Theme.of(context).primaryColor,
-          size: 20,
-        ),
+        Icon(Icons.track_changes, color: primaryColor, size: 20),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -158,17 +206,19 @@ class _IBoxDetailScreenState extends State<IBoxDetailScreen> {
             children: [
               Text(
                 '$label:',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
               ),
               const SizedBox(height: 4),
               DropdownButtonFormField<String>(
                 value: currentValue,
-                items: options.map((value) {
-                  return DropdownMenuItem(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                items:
+                    options.map((value) {
+                      return DropdownMenuItem(value: value, child: Text(value));
+                    }).toList(),
                 onChanged: (newValue) {
                   if (newValue != null) {
                     onChanged(newValue);
@@ -178,10 +228,94 @@ class _IBoxDetailScreenState extends State<IBoxDetailScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.8),
                 ),
+                dropdownColor: Colors.white.withOpacity(0.95),
+                style: TextStyle(color: primaryColor),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditableDetailItem(
+    String label,
+    String currentValue,
+    Function(String) onChanged,
+    Color primaryColor,
+  ) {
+    final controller = TextEditingController(text: currentValue);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.location_on, color: primaryColor, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$label:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  TextFormField(
+                    controller: controller,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              final newValue = controller.text.trim();
+              if (newValue.isNotEmpty && newValue != currentValue) {
+                onChanged(newValue);
+              }
+            },
+            child: const Text(
+              'Enregistrer',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ),
       ],

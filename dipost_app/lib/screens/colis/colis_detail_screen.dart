@@ -1,4 +1,3 @@
-import 'package:dipost_app/screens/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/colis.dart';
@@ -31,7 +30,7 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
         .getColisWithDetails(widget.colisId);
   }
 
-  void _navigateToModifierColis(BuildContext context, Colis colis) async {
+  Future<void> _navigateToModifierColis(BuildContext context, Colis colis) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -39,7 +38,7 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
       ),
     );
 
-    if (result == true) {
+    if (result == true && mounted) {
       setState(() {
         _loadColis();
       });
@@ -55,7 +54,7 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
     }
   }
 
-  void _navigateToDemandeLivraison(BuildContext context, Colis colis) async {
+  Future<void> _navigateToDemandeLivraison(BuildContext context, Colis colis) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -63,7 +62,7 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
       ),
     );
 
-    if (result == true) {
+    if (result == true && mounted) {
       setState(() {
         _loadColis();
       });
@@ -79,12 +78,15 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final primaryColor = AppTheme.getPrimaryColor(authProvider);
+ @override
+Widget build(BuildContext context) {
+  final authProvider = Provider.of<AuthProvider>(context);
+  final primaryColor = AppTheme.getPrimaryColor(authProvider);
 
-    return Scaffold(
+  return Container(
+    decoration: AppTheme.getBackgroundDecoration(authProvider),
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Détails du Colis'),
         backgroundColor: primaryColor,
@@ -119,43 +121,42 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
 
           final colis = snapshot.data!;
 
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  primaryColor.withOpacity(0.05),
-                  Theme.of(context).colorScheme.background,
-                ],
-              ),
-            ),
+          return SingleChildScrollView(
             child: Column(
               children: [
-                _buildInfoCard(colis, primaryColor, context),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildInfoCard(colis, primaryColor, context),
+                ),
                 const SizedBox(height: 20),
                 if (authProvider.isOperateur || authProvider.isAdmin)
-                  _buildActionButton(
-                    context,
-                    'Modifier le colis',
-                    () => _navigateToModifierColis(context, colis),
-                    primaryColor,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildActionButton(
+                      context,
+                      'Modifier le colis',
+                      () => _navigateToModifierColis(context, colis),
+                      primaryColor,
+                    ),
                   )
                 else if (authProvider.isClient)
-                  _buildActionButton(
-                    context,
-                    'Demander livraison',
-                    () => _navigateToDemandeLivraison(context, colis),
-                    primaryColor,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildActionButton(
+                      context,
+                      'Demander livraison',
+                      () => _navigateToDemandeLivraison(context, colis),
+                      primaryColor,
+                    ),
                   ),
               ],
             ),
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildInfoCard(Colis colis, Color primaryColor, BuildContext context) {
     return Card(
@@ -163,6 +164,7 @@ class _ColisDetailScreenState extends State<ColisDetailScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
+      color: Colors.white.withOpacity(0.9),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

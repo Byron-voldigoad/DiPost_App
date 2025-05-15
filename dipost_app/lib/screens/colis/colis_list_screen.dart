@@ -36,39 +36,31 @@ class _ColisListScreenState extends State<ColisListScreen> {
     final colisProvider = Provider.of<ColisProvider>(context);
     final primaryColor = AppTheme.getPrimaryColor(authProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          authProvider.isLivreur ? 'Colis à livrer' : 'Mes Colis',
-        ),
-        backgroundColor: primaryColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              primaryColor.withOpacity(0.05),
-              Theme.of(context).colorScheme.background,
-            ],
+    return Container(
+      decoration: AppTheme.getBackgroundDecoration(authProvider),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(
+            authProvider.isLivreur ? 'Colis à livrer' : 'Mes Colis',
+          ),
+          backgroundColor: primaryColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
           ),
         ),
-        child: _buildBody(colisProvider, primaryColor),
+        body: _buildBody(colisProvider, primaryColor),
+        floatingActionButton: _shouldShowFloatingActionButton(authProvider)
+            ? FloatingActionButton(
+                onPressed: () => _navigateToAddColis(context),
+                backgroundColor: primaryColor,
+                child: const Icon(Icons.add, color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              )
+            : null,
       ),
-      floatingActionButton: _shouldShowFloatingActionButton(authProvider)
-          ? FloatingActionButton(
-              onPressed: () => _navigateToAddColis(context),
-              backgroundColor: primaryColor,
-              child: const Icon(Icons.add, color: Colors.white),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            )
-          : null,
     );
   }
 
@@ -117,6 +109,7 @@ class _ColisListScreenState extends State<ColisListScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+      color: Colors.white.withOpacity(0.9),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => Navigator.push(

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/database_helper.dart';
 import '../../constants/route_names.dart';
-import 'package:intl/intl.dart';
+import '../theme/app_theme.dart';
 
 class LivraisonListLivreurScreen extends StatefulWidget {
   const LivraisonListLivreurScreen({super.key});
@@ -70,62 +71,83 @@ class _LivraisonListLivreurScreenState extends State<LivraisonListLivreurScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mes Livraisons'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.qr_code_scanner, color: Theme.of(context).appBarTheme.iconTheme?.color),
-            onPressed: () => Navigator.pushNamed(context, RouteNames.livraisonList),
-            tooltip: 'Scanner un QR code',
+    final authProvider = Provider.of<AuthProvider>(context);
+    final primaryColor = AppTheme.getPrimaryColor(authProvider);
+
+    return Container(
+      decoration: AppTheme.getBackgroundDecoration(authProvider),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Mes Livraisons'),
+          backgroundColor: primaryColor,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
           ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _livraisonsDetails.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.local_shipping_outlined, size: 64, color: Theme.of(context).primaryColor),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Aucune livraison assignée',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+              onPressed: () => Navigator.pushNamed(context, RouteNames.livraisonList),
+              tooltip: 'Scanner un QR code',
+            ),
+          ],
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _livraisonsDetails.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.local_shipping_outlined, size: 64, color: primaryColor),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Aucune livraison assignée',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadLivraisonsWithDetails,
+                    color: primaryColor,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      itemCount: _livraisonsDetails.length,
+                      itemBuilder: (context, index) {
+                        final livraison = _livraisonsDetails[index];
+                        return _buildLivraisonCard(livraison, primaryColor);
+                      },
+                    ),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  itemCount: _livraisonsDetails.length,
-                  itemBuilder: (context, index) {
-                    final livraison = _livraisonsDetails[index];
-                    return _buildLivraisonCard(livraison);
-                  },
-                ),
+      ),
     );
   }
 
-  Widget _buildLivraisonCard(Map<String, dynamic> livraison) {
+  Widget _buildLivraisonCard(Map<String, dynamic> livraison, Color primaryColor) {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white.withOpacity(0.9),
       child: ExpansionTile(
-        leading: Icon(Icons.local_shipping, color: Theme.of(context).primaryColor),
+        leading: Icon(Icons.local_shipping, color: primaryColor),
         title: Text(
           'Livraison #${livraison['livraison_id']}',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: primaryColor,
+          ),
         ),
         subtitle: Text(
           'Statut: ${livraison['statut']}',
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: const TextStyle(fontSize: 14),
         ),
         children: [
           Padding(
@@ -135,35 +157,54 @@ class _LivraisonListLivreurScreenState extends State<LivraisonListLivreurScreen>
               children: [
                 Text(
                   'Détails du colis',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                _buildDetailRow(Icons.description, 'Contenu', livraison['colis_contenu']),
-                _buildDetailRow(Icons.info, 'Statut', livraison['colis_statut']),
+                _buildDetailRow(Icons.description, 'Contenu', livraison['colis_contenu'], primaryColor),
+                _buildDetailRow(Icons.info, 'Statut', livraison['colis_statut'], primaryColor),
                 const SizedBox(height: 16),
                 Text(
                   'Destinataire',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                _buildDetailRow(Icons.person, 'Nom', '${livraison['destinataire_nom']} ${livraison['destinataire_prenom']}'),
-                _buildDetailRow(Icons.phone, 'Téléphone', livraison['destinataire_telephone'] ?? 'Non spécifié'),
+                _buildDetailRow(Icons.person, 'Nom', '${livraison['destinataire_nom']} ${livraison['destinataire_prenom']}', primaryColor),
+                _buildDetailRow(Icons.phone, 'Téléphone', livraison['destinataire_telephone'] ?? 'Non spécifié', primaryColor),
                 const SizedBox(height: 16),
                 Text(
                   'Dates',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                _buildDetailRow(Icons.calendar_today, 'Demande', formatDate(livraison['date_demande'])),
+                _buildDetailRow(Icons.calendar_today, 'Demande', formatDate(livraison['date_demande']), primaryColor),
                 if (livraison['date_livraison'] != null)
-                  _buildDetailRow(Icons.event_available, 'Livraison', formatDate(livraison['date_livraison'])),
+                  _buildDetailRow(Icons.event_available, 'Livraison', formatDate(livraison['date_livraison']), primaryColor),
                 const SizedBox(height: 16),
-                
-                const SizedBox(height: 8),
                 Center(
-                  child: Text(
-                    'Scannez Le code QR du client pour valider la livraison',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+                  child: Column(
+                    children: [
+                      
+                     
+                      Text(
+                        'Scannez le code QR du client pour valider la livraison',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -174,13 +215,13 @@ class _LivraisonListLivreurScreenState extends State<LivraisonListLivreurScreen>
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, Color primaryColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+          Icon(icon, color: primaryColor, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -188,11 +229,15 @@ class _LivraisonListLivreurScreenState extends State<LivraisonListLivreurScreen>
               children: [
                 Text(
                   '$label:',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
                 ),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: const TextStyle(fontSize: 14),
                 ),
               ],
             ),

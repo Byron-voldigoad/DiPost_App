@@ -3,15 +3,16 @@ import '../../providers/auth_provider.dart';
 
 class AppTheme {
   static Color getPrimaryColor(AuthProvider authProvider) {
-    if (authProvider.isAdmin) return const Color.fromRGBO(103, 58, 183, 1);
-    if (authProvider.isOperateur || authProvider.isLivreur) return Colors.blue;
-    if (authProvider.isClient) return const Color.fromARGB(255, 212, 130, 6);
-    return const Color.fromRGBO(103, 58, 183, 1);
+    if (authProvider.isAdmin) return const Color.fromARGB(255, 92, 142, 201);
+    if (authProvider.isOperateur || authProvider.isLivreur)
+      return const Color.fromARGB(255, 9, 149, 72);
+    if (authProvider.isClient) return const Color.fromARGB(255, 102, 173, 9);
+    return const Color.fromARGB(255, 22, 120, 185);
   }
 
   static ThemeData getThemeData(AuthProvider authProvider) {
     final primaryColor = getPrimaryColor(authProvider);
-    
+
     return ThemeData(
       primarySwatch: _createMaterialColor(primaryColor),
       visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -34,6 +35,26 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
+        ),
+      ),
+      // Ajout de l'image de fond pour les Scaffold
+      scaffoldBackgroundColor: Colors.transparent,
+      // Optionnel: vous pouvez aussi définir un style par défaut pour les Scaffold
+      // qui utilisera cette image de fond
+    );
+  }
+
+  // Méthode pour obtenir un BoxDecoration avec l'image de fond
+  static BoxDecoration getBackgroundDecoration(AuthProvider authProvider) {
+    final primaryColor = getPrimaryColor(authProvider);
+    return BoxDecoration(
+      color: primaryColor.withOpacity(0.1), // Couche de teinte
+      image: DecorationImage(
+        image: AssetImage('assets/background_dark.png'),
+        fit: BoxFit.cover,
+        colorFilter: ColorFilter.mode(
+          primaryColor.withOpacity(0.8),
+          BlendMode.softLight, // Donne un effet plus doux
         ),
       ),
     );

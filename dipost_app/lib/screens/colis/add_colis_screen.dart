@@ -34,10 +34,7 @@ class _AddColisScreenState extends State<AddColisScreen> {
 
   Future<void> _loadData() async {
     try {
-      await Future.wait([
-        _loadIBoxes(),
-        _loadUsers(),
-      ]);
+      await Future.wait([_loadIBoxes(), _loadUsers()]);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -90,16 +87,16 @@ class _AddColisScreenState extends State<AddColisScreen> {
     final iboxProvider = Provider.of<IBoxProvider>(context);
     final userProvider = Provider.of<UserProvider>(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nouveau Colis'),
-        elevation: 0,
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
+    return Container(
+      decoration: AppTheme.getBackgroundDecoration(authProvider),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(title: const Text('Nouveau Colis'), elevation: 0),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                     horizontal: constraints.maxWidth > 600 ? 100 : 16.0,
                     vertical: 24.0,
@@ -111,16 +108,20 @@ class _AddColisScreenState extends State<AddColisScreen> {
                       children: [
                         Text(
                           'Créer un nouveau colis',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ),
                         const SizedBox(height: 24),
                         Card(
                           elevation: 2,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          color: Colors.white.withOpacity(0.9),
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
                               maxWidth: constraints.maxWidth * 0.9,
@@ -137,8 +138,12 @@ class _AddColisScreenState extends State<AddColisScreen> {
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      prefixIcon: Icon(Icons.inventory,
-                                          color: Theme.of(context).primaryColor),
+                                      prefixIcon: Icon(
+                                        Icons.inventory,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white.withOpacity(0.8),
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -151,7 +156,8 @@ class _AddColisScreenState extends State<AddColisScreen> {
                                   _buildExpediteurDropdown(userProvider),
                                   const SizedBox(height: 16),
                                   _buildIBoxDropdown(iboxProvider),
-                                  if (authProvider.isAdmin || authProvider.isOperateur) ...[
+                                  if (authProvider.isAdmin ||
+                                      authProvider.isOperateur) ...[
                                     const SizedBox(height: 16),
                                     _buildDestinataireDropdown(userProvider),
                                   ],
@@ -167,15 +173,23 @@ class _AddColisScreenState extends State<AddColisScreen> {
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.9),
                               ),
                               onPressed: _submitForm,
                               child: const Text(
                                 'Créer le colis',
                                 style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -184,11 +198,13 @@ class _AddColisScreenState extends State<AddColisScreen> {
                     ),
                   ),
                 );
-        },
+          },
+        ),
       ),
     );
   }
 
+  // [Les autres méthodes restent inchangées...]
   Widget _buildExpediteurDropdown(UserProvider userProvider) {
     if (!_usersLoaded) {
       return const Padding(
@@ -197,28 +213,35 @@ class _AddColisScreenState extends State<AddColisScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 8),
-            Text('Chargement des expéditeurs...',
-                style: TextStyle(color: Colors.grey)),
+            Text(
+              'Chargement des expéditeurs...',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       );
     }
 
-    // Même liste que pour les destinataires (clients)
-    final clients = userProvider.users.where((u) => u.role == 'client').toList();
+    final clients =
+        userProvider.users.where((u) => u.role == 'client').toList();
 
     if (clients.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
-            Icon(Icons.warning, color: Theme.of(context).primaryColor, size: 40),
+            Icon(
+              Icons.warning,
+              color: Theme.of(context).primaryColor,
+              size: 40,
+            ),
             const SizedBox(height: 8),
             Text(
               'Aucun expéditeur disponible',
               style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.w600),
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -230,11 +253,13 @@ class _AddColisScreenState extends State<AddColisScreen> {
       value: _selectedExpediteurId,
       decoration: InputDecoration(
         labelText: 'Expéditeur*',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        prefixIcon: Icon(
+          Icons.person_outline,
+          color: Theme.of(context).primaryColor,
         ),
-        prefixIcon: Icon(Icons.person_outline,
-            color: Theme.of(context).primaryColor),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.8),
       ),
       validator: (value) {
         if (value == null) {
@@ -272,7 +297,10 @@ class _AddColisScreenState extends State<AddColisScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 8),
-            Text('Chargement des iBox...', style: TextStyle(color: Colors.grey)),
+            Text(
+              'Chargement des iBox...',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       );
@@ -283,13 +311,18 @@ class _AddColisScreenState extends State<AddColisScreen> {
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
-            Icon(Icons.warning, color: Theme.of(context).primaryColor, size: 40),
+            Icon(
+              Icons.warning,
+              color: Theme.of(context).primaryColor,
+              size: 40,
+            ),
             const SizedBox(height: 8),
             Text(
               'Aucune iBox disponible',
               style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.w600),
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -301,11 +334,13 @@ class _AddColisScreenState extends State<AddColisScreen> {
       value: _selectedIBoxId,
       decoration: InputDecoration(
         labelText: 'iBox de destination',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        prefixIcon: Icon(
+          Icons.location_on,
+          color: Theme.of(context).primaryColor,
         ),
-        prefixIcon: Icon(Icons.location_on,
-            color: Theme.of(context).primaryColor),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.8),
       ),
       items: [
         const DropdownMenuItem(
@@ -343,27 +378,35 @@ class _AddColisScreenState extends State<AddColisScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 8),
-            Text('Chargement des destinataires...',
-                style: TextStyle(color: Colors.grey)),
+            Text(
+              'Chargement des destinataires...',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       );
     }
 
-    final clients = userProvider.users.where((u) => u.role == 'client').toList();
+    final clients =
+        userProvider.users.where((u) => u.role == 'client').toList();
 
     if (clients.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
-            Icon(Icons.warning, color: Theme.of(context).primaryColor, size: 40),
+            Icon(
+              Icons.warning,
+              color: Theme.of(context).primaryColor,
+              size: 40,
+            ),
             const SizedBox(height: 8),
             Text(
               'Aucun client disponible',
               style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.w600),
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -375,10 +418,10 @@ class _AddColisScreenState extends State<AddColisScreen> {
       value: _selectedDestinataireId,
       decoration: InputDecoration(
         labelText: 'Destinataire*',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         prefixIcon: Icon(Icons.person, color: Theme.of(context).primaryColor),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.8),
       ),
       validator: (value) {
         if (value == null) {
@@ -441,23 +484,27 @@ class _AddColisScreenState extends State<AddColisScreen> {
         throw Exception('Veuillez sélectionner un destinataire');
       }
 
-      final expediteur = userProvider.users
-          .firstWhere((user) => user.id == _selectedExpediteurId);
-      final destinataire = _selectedDestinataireId != null
-          ? userProvider.users.firstWhere(
-              (user) => user.id == _selectedDestinataireId)
-          : authProvider.user;
+      final expediteur = userProvider.users.firstWhere(
+        (user) => user.id == _selectedExpediteurId,
+      );
+      final destinataire =
+          _selectedDestinataireId != null
+              ? userProvider.users.firstWhere(
+                (user) => user.id == _selectedDestinataireId,
+              )
+              : authProvider.user;
 
       final newColis = Colis(
         id: 0,
         iboxId: _selectedIBoxId,
         destinataireId: _selectedDestinataireId ?? authProvider.user!.id,
         expediteurId: _selectedExpediteurId!,
-        iboxAdresse: _selectedIBoxId != null
-            ? iboxProvider.iboxes
-                .firstWhere((ibox) => ibox.id == _selectedIBoxId)
-                .adresse
-            : 'Non spécifiée',
+        iboxAdresse:
+            _selectedIBoxId != null
+                ? iboxProvider.iboxes
+                    .firstWhere((ibox) => ibox.id == _selectedIBoxId)
+                    .adresse
+                : 'Non spécifiée',
         destinataireNom: destinataire?.nom ?? '',
         destinatairePrenom: destinataire?.prenom ?? '',
         expediteurNom: expediteur.nom,

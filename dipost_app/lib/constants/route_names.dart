@@ -24,10 +24,14 @@ class RouteNames {
   static const String livraisonDetailUser = '/livraison/detail';
   static const String livraisonScan = '/livraison-scan';
   static const String livraisonListLivreur = '/livraison-livreur';
+  static const String livraisonManagement = '/livraison-management';
   
-  // Signature
-  static const String signatureList = '/signatures';
-  static const String signatureCreate = '/signatures/create';
+  // Signatures
+  static const String documentUpload = '/document/upload';
+  static const String documentList = '/document/list';
+  static const String signatureCapture = '/signature/capture';
+  static const String signatureList = '/signature/list';
+
   
   // Admin
   static const String userManagement = '/admin/users';

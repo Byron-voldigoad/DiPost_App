@@ -43,7 +43,9 @@ class CustomDrawer extends StatelessWidget {
               routeName: RouteNames.iboxList,
               color: primaryColor,
             ),
-          if (authProvider.isAdmin || authProvider.isOperateur || authProvider.isLivreur)
+          if (authProvider.isAdmin ||
+              authProvider.isOperateur ||
+              authProvider.isLivreur)
             _buildDrawerTile(
               context,
               icon: Icons.mail,
@@ -73,11 +75,13 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerTile(BuildContext context,
-      {required IconData icon,
-      required String label,
-      required String routeName,
-      required Color color}) {
+  Widget _buildDrawerTile(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String routeName,
+    required Color color,
+  }) {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(label, style: TextStyle(color: color)),

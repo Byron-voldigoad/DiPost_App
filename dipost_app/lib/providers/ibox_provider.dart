@@ -56,35 +56,45 @@ class IBoxProvider with ChangeNotifier {
   }
 
   Future<IBox?> getIBoxById(int id) async {
-  try {
-    return await _iboxService.getIBoxById(id);
-  } catch (e) {
-    debugPrint('Error getting iBox by id: $e');
-    return null;
+    try {
+      return await _iboxService.getIBoxById(id);
+    } catch (e) {
+      debugPrint('Error getting iBox by id: $e');
+      return null;
+    }
   }
-}
 
-Future<List<IBox>> getOperatorsIBoxes(int operatorId) async {
+  Future<List<IBox>> getOperatorsIBoxes(int operatorId) async {
     final db = await DatabaseHelper.instance.database;
-    final result = await db.rawQuery('''
+    final result = await db.rawQuery(
+      '''
       SELECT ibox.* FROM ibox
       JOIN user_ibox ON ibox.id_ibox = user_ibox.ibox_id
       WHERE user_ibox.user_id = ?
-    ''', [operatorId]);
+    ''',
+      [operatorId],
+    );
 
     return result.map((map) => IBox.fromMap(map)).toList();
   }
 
-  Future<bool> updateIBoxStatus(int iboxId, String newStatus, {int? operatorId}) async {
+  Future<bool> updateIBoxStatus(
+    int iboxId,
+    String newStatus, {
+    int? operatorId,
+  }) async {
     try {
       final db = await DatabaseHelper.instance.database;
-      
+
       if (operatorId != null) {
         // Vérifier que l'opérateur gère bien cette iBox
-        final managed = await db.rawQuery('''
+        final managed = await db.rawQuery(
+          '''
           SELECT 1 FROM user_ibox 
           WHERE user_id = ? AND ibox_id = ?
-        ''', [operatorId, iboxId]);
+        ''',
+          [operatorId, iboxId],
+        );
 
         if (managed.isEmpty) return false;
       }
@@ -95,7 +105,7 @@ Future<List<IBox>> getOperatorsIBoxes(int operatorId) async {
         where: 'id_ibox = ?',
         whereArgs: [iboxId],
       );
-      
+
       notifyListeners();
       return true;
     } catch (e) {
@@ -104,4 +114,22 @@ Future<List<IBox>> getOperatorsIBoxes(int operatorId) async {
     }
   }
 
+  Future<bool> updateIBoxAdresse(int iboxId, String newAdresse) async {
+    try {
+      final db = await DatabaseHelper.instance.database;
+
+      await db.update(
+        'ibox',
+        {'adresse': newAdresse},
+        where: 'id_ibox = ?',
+        whereArgs: [iboxId],
+      );
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Update iBox address error: $e');
+      return false;
+    }
+  }
 }

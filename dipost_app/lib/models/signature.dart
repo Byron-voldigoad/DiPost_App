@@ -1,44 +1,40 @@
-// Signature model 
-class Signature {
-  final int id;
+// models/signature.dart
+class MySignature {
+  final int? id;
   final int userId;
   final String documentPath;
-  final String niveau;
-  final DateTime horodatage;
-  final String? certificat;
-  final String? qrCode;
+  final String documentType;
+  final String signatureData;
+  final DateTime createdAt;
 
-  Signature({
-    required this.id,
+  MySignature({
+    this.id,
     required this.userId,
     required this.documentPath,
-    required this.niveau,
-    required this.horodatage,
-    this.certificat,
-    this.qrCode,
+    required this.documentType,
+    required this.signatureData,
+    required this.createdAt,
   });
-
-  factory Signature.fromMap(Map<String, dynamic> map) {
-    return Signature(
-      id: map['id_signature'],
-      userId: map['id_utilisateur'],
-      documentPath: map['document'],
-      niveau: map['niveau_signature'],
-      horodatage: DateTime.parse(map['horodatage']),
-      certificat: map['certificat'],
-      qrCode: map['qr_code'],
-    );
-  }
 
   Map<String, dynamic> toMap() {
     return {
-      'id_signature': id,
+      'id': id,
       'id_utilisateur': userId,
-      'document': documentPath,
-      'niveau_signature': niveau,
-      'horodatage': horodatage.toIso8601String(),
-      'certificat': certificat,
-      'qr_code': qrCode,
+      'document_path': documentPath,
+      'document_type': documentType,
+      'signature_data': signatureData,
+      'created_at': createdAt.toIso8601String(),
     };
+  }
+
+  factory MySignature.fromMap(Map<String, dynamic> map) {
+    return MySignature(
+      id: map['id'],
+      userId: map['id_utilisateur'],
+      documentPath: map['document_path'],
+      documentType: map['document_type'],
+      signatureData: map['signature_data'],
+      createdAt: DateTime.parse(map['created_at']),
+    );
   }
 }
